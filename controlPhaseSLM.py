@@ -3,6 +3,8 @@ from tkinter import ttk
 import tkinter.font as tkFont
 import numpy as np
 from tkinter.filedialog import askopenfilename, asksaveasfilename
+from matplotlib import pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 
 class main_screen(object):
@@ -13,8 +15,8 @@ class main_screen(object):
         self.main_win = parent
         self.main_win.title('SLM Phase Control')
 
-        self.main_win.columnconfigure(0, minsize=500, weight=1)
-        self.main_win.rowconfigure(2, minsize=400, weight=1)
+        self.main_win.columnconfigure(0, minsize=300, weight=1)
+        self.main_win.rowconfigure(2, minsize=200, weight=1)
 
         # creating frames
         frm_top = tk.Frame(self.main_win)
@@ -130,11 +132,47 @@ class prev_screen(object):
 
     def __init__(self, parent):
         self.win = tk.Toplevel()
-        self.win.geometry('400x300')
+        self.win.geometry('600x500')
         self.win.title('SLM Phase Control - Preview')
         def handler(): return self.on_close_prev()
         btn_close = tk.Button(self.win, text='Close', command=handler)
-        btn_close.pack()
+        btn_close.pack(side=tk.BOTTOM)
+
+        x = np.linspace(-50, 50, num=256)
+        y = np.linspace(-50, 50, num=256)
+        [X, Y] = np.meshgrid(x, y)
+
+        x0 = 0  # center
+        y0 = 0  # center
+        sigma = 5  # beam waist
+        A = 1  # peak of the beam
+        res = ((X-x0)**2 + (Y-y0)**2)/(2*sigma**2)
+        input_intensity = A * np.exp(-res)
+        input_intensity[np.sqrt(X**2+Y**2) < 4] = 0
+
+        input_phase = np.zeros(input_intensity.shape)
+
+        tmp = abs(input_intensity)*np.exp(1j*input_phase)
+
+        focus_int = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(tmp)))
+
+        fig1, ax1 = plt.subplots(nrows=2, ncols=2, figsize=(20, 15), dpi=100)
+        ax1[0, 0].imshow(input_intensity)
+        ax1[0, 0].set_title('Input int')
+
+        ax1[0, 1].imshow(input_phase)
+        ax1[0, 1].set_title('Input phase')
+
+        ax1[1, 0].imshow(abs(focus_int))
+        ax1[1, 0].set_ylabel('In Focus')
+        ax1[1, 0].axis([108, 148, 108, 148])
+
+        ax1[1, 1].imshow(np.angle(focus_int))
+        #ax1[1, 1].set_title('Focus phase')
+        ax1[1, 1].axis([108, 148, 108, 148])
+
+        img1 = FigureCanvasTkAgg(fig1, self.win)
+        img1.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
 
     def on_close_prev(self):
         self.win.destroy()
@@ -158,16 +196,6 @@ class pub_screen(object):
 root = tk.Tk()
 
 main = main_screen(root)
-
-
-# Creating other windows
-# wind_prev = tk.Toplevel()
-# wind_pub = tk.Toplevel()
-
-
-# Setting up preview window
-# wind_prev.geometry('400x300')
-# wind_prev.title('Control Phase - Preview')
 
 
 root.mainloop()
