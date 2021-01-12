@@ -18,12 +18,12 @@ class main_screen(object):
         self.main_win = parent
         self.main_win.title('SLM Phase Control')
 
-        self.main_win.columnconfigure(0, minsize=300, weight=1)
-        self.main_win.rowconfigure(2, minsize=200, weight=1)
+        self.main_win.columnconfigure(0, minsize=250, weight=1)
+        self.main_win.rowconfigure(2, minsize=100, weight=1)
 
         # creating frames
         frm_top = tk.Frame(self.main_win)
-        self.frm_mid = tk.Frame(self.main_win, relief='sunken')
+        self.frm_mid = tk.Frame(self.main_win)
         frm_bot = tk.Frame(self.main_win)
 
         # Creating labels
@@ -82,14 +82,11 @@ class main_screen(object):
         self.cbx_type['values'] = types_of_phases.types()
 
     def new_type(self, event):
-        type = self.cbx_type.get()
-        if type == 'None':
-            self.type = types_of_phases.type_none(self.frm_mid)
-        elif type == 'Redirection':
-            self.type = types_of_phases.type_dir(self.frm_mid)
+        typ = self.cbx_type.get()
+        self.typ = types_of_phases.new_type(self.frm_mid, typ)
 
     def get_type(self):
-        return self.type
+        return self.typ
 
 
 root = tk.Tk()

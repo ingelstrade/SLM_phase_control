@@ -29,7 +29,7 @@ class prev_screen(object):
         input_intensity = A * np.exp(-res)
         input_intensity[np.sqrt(X**2+Y**2) < 4] = 0
 
-        input_phase = parent.get_type.phase()
+        input_phase = parent.get_type().phase()
 
         tmp = abs(input_intensity)*np.exp(1j*input_phase)
 
