@@ -17,7 +17,7 @@ class prev_screen(object):
         btn_close = tk.Button(self.win, text='Close', command=handler)
         btn_close.pack(side=tk.BOTTOM)
 
-        x = np.linspace(-40, 40, num=800)
+        x = np.linspace(-40, 40, num=792)
         y = np.linspace(-30, 30, num=600)
         [X, Y] = np.meshgrid(x, y)
 
@@ -29,7 +29,7 @@ class prev_screen(object):
         input_intensity = A * np.exp(-res)
         input_intensity[np.sqrt(X**2+Y**2) < 4] = 0
 
-        input_phase = parent.get_type().phase()
+        input_phase = parent.get_phase()/254*2*3.141592653589793238462643383279
 
         tmp = abs(input_intensity)*np.exp(1j*input_phase)
 
