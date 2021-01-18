@@ -35,7 +35,7 @@ class prev_screen(object):
 
         focus_int = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(tmp)))
 
-        fig1, ax1 = plt.subplots(nrows=2, ncols=2, figsize=(20, 15), dpi=100)
+        fig1, ax1 = plt.subplots(nrows=2, ncols=2)
         ax1[0, 0].imshow(input_intensity)
         ax1[0, 0].set_title('Input int')
 
