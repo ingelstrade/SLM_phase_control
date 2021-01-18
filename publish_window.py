@@ -7,19 +7,21 @@ print('publish_window in')
 class pub_screen(object):
     """"""
 
-    def __init__(self, parent):
+    def __init__(self, parent, position):
         self.win = tk.Toplevel()
-        self.win.geometry('800x600+500+200')
+        try:
+            self.win.geometry('792x600' + position)
+        except tk.TclError:
+            self.win.geometry('792x600')
+            print('Not correct position')
         # self.win.attributes('-fullscreen', True)
-        self.win.title('SLM Phase Control - Publish')
+        self.win.overrideredirect(1)
         def handler(event): return self.on_close()
         self.win.bind('<Escape>', handler)
         phase = parent.get_phase()
         img = Image.fromarray(np.uint8(phase))
-        img.save('./SLM_phase_control/phase.bmp')
+        img.save('./phase.bmp')
         im = ImageTk.PhotoImage(img)
-        print(img)
-        print(im)
         lbl_img = tk.Label(self.win, image=im)
         lbl_img.image = im
         lbl_img.pack(fill='both', side=tk.TOP, expand=1)

@@ -28,16 +28,16 @@ class main_screen(object):
             self.main_win,
             text='Control Phase',
             font=tkFont.Font(family='Lucida Grande', size=20))
-        lbl_screen = tk.Label(frm_top, text='Screen:')
+        lbl_screen = tk.Label(frm_top, text='SLM screen position:')
 
         # Creating buttons
         but_prev = tk.Button(frm_bot, text='Preview', command=self.open_prev)
         but_pub = tk.Button(frm_bot, text='Publish', command=self.open_pub)
         but_exit = tk.Button(frm_bot, text='EXIT', command=self.exit_prog)
 
-        # Creating combobox
-        cbx_scr = ttk.Combobox(frm_top, value=['None'])
-        cbx_scr.current(0)
+        # Creating entry
+        self.ent_scr = tk.Entry(frm_top, width=15)
+        self.ent_scr.insert(tk.END, '+right+down')
 
         # Setting up general structure
         lbl_title.grid(row=0, column=0, sticky='ew')
@@ -47,7 +47,7 @@ class main_screen(object):
 
         # Setting up top frame
         lbl_screen.grid(row=0, column=0, sticky='e', padx=10, pady=10)
-        cbx_scr.grid(row=0, column=1, sticky='w')
+        self.ent_scr.grid(row=0, column=1, sticky='w', padx=(0, 10))
         self.setup_box(frm_top)  # sets up the checkboxes separately
 
         # Setting up bot frame
@@ -59,11 +59,11 @@ class main_screen(object):
         self.prev_win = preview_window.prev_screen(self)
 
     def open_pub(self):
-        self.pub_win = publish_window.pub_screen(self)
+        self.pub_win = publish_window.pub_screen(self, self.ent_scr.get())
 
     def setup_box(self, frm_):
         frm_box = tk.LabelFrame(frm_, text='Phases enabled')
-        frm_box.grid(column=1)
+        frm_box.grid(column=0)
         types = phase_settings.types()  # reads in the different phase types
         self.vars = []  # init a list holding the variables from the boxes
         self.phase_refs = []  # init a list to hold the references to types
