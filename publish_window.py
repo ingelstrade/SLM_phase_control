@@ -12,7 +12,7 @@ class pub_screen(object):
         try:
             self.win.geometry('792x600' + position)
         except tk.TclError:
-            self.win.geometry('792x600')
+            self.win.geometry('792x600+500+100')
             print('Not correct position')
         # self.win.attributes('-fullscreen', True)
         self.win.overrideredirect(1)

@@ -64,12 +64,13 @@ class main_screen(object):
     def setup_box(self, frm_):
         frm_box = tk.LabelFrame(frm_, text='Phases enabled')
         frm_box.grid(column=0)
-        types = phase_settings.types()  # reads in the different phase types
+        self.types = phase_settings.types()  # reads in the different phase types
         self.vars = []  # init a list holding the variables from the boxes
         self.phase_refs = []  # init a list to hold the references to types
         self.active_phases = []
-        commands = [self.ss_bg, self.ss_dir, self.ss_bi]
-        for ind, typ in enumerate(types):
+        commands = [self.start_stop_0, self.start_stop_1, self.start_stop_2,
+                    self.start_stop_3, self.start_stop_4]
+        for ind, typ in enumerate(self.types):
             self.var_ = (tk.IntVar())
             self.vars.append(self.var_)
             self.phase_refs.append(0)  # just filling it with 0 to start with
@@ -79,18 +80,27 @@ class main_screen(object):
                                        command=commands[ind])
             self.box_.grid(row=ind, sticky='w')
 
-    def ss_bg(self):
-        self.start_stop_t(0, 'Background')
+# It is a bit not so nice, but box commands cant send args. currently able to
+# run 5 different phase types
+    def start_stop_0(self):
+        self.start_stop_t(0)
 
-    def ss_dir(self):
-        self.start_stop_t(1, 'Redirection')
+    def start_stop_1(self):
+        self.start_stop_t(1)
 
-    def ss_bi(self):
-        self.start_stop_t(2, 'Binary')
+    def start_stop_2(self):
+        self.start_stop_t(2)
 
-    def start_stop_t(self, ind, typ):
+    def start_stop_3(self):
+        self.start_stop_t(3)
+
+    def start_stop_4(self):
+        self.start_stop_t(4)
+
+    def start_stop_t(self, ind):
         if self.vars[ind].get() == 1:
-            self.phase_refs[ind] = phase_settings.new_type(self.frm_mid, typ)
+            self.phase_refs[ind] = phase_settings.new_type(self.frm_mid,
+                                                           self.types[ind])
             self.active_phases.append(self.phase_refs[ind])
         else:
             if self.phase_refs[ind] != 0:

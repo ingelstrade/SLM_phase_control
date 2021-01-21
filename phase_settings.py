@@ -79,6 +79,7 @@ class type_dir(object):
         # Creating objects
         lbl_xdir = tk.Label(lbl_frm, text='Steepness along x-direction:')
         lbl_ydir = tk.Label(lbl_frm, text='Steepness along y-direction:')
+        lbl_255 = tk.Label(lbl_frm, text='(255 corresponds to 2pi Rad)')
         vcmd = (parent.register(self.callback))
         self.ent_xdir = tk.Entry(
             lbl_frm, width=11,  validate='all',
@@ -90,6 +91,7 @@ class type_dir(object):
         # Setting up
         lbl_xdir.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
         lbl_ydir.grid(row=1, column=0, sticky='e', padx=(10, 0), pady=(0, 5))
+        lbl_255.grid(row=2, sticky='ew', padx=(10, 10), pady=(0, 5))
         self.ent_xdir.grid(row=0, column=1, sticky='w', padx=(0, 10))
         self.ent_ydir.grid(row=1, column=1, sticky='w', padx=(0, 10))
 
@@ -114,13 +116,13 @@ class type_dir(object):
         if xdir != '' and float(xdir) != 0:
             phx = np.outer(
                 np.ones([600, 1]),
-                np.arange(0, float(xdir), float(xdir)/792))
+                np.arange(0, float(xdir)*792, float(xdir)))
         else:
             phx = np.zeros([600, 792])
 
         if ydir != '' and float(ydir) != 0:
             phy = np.outer(
-                np.arange(0, float(ydir), float(ydir)/600),
+                np.arange(0, float(ydir)*600, float(ydir)),
                 np.ones([1, 792]))
         else:
             phy = np.zeros([600, 792])
