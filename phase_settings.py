@@ -8,7 +8,7 @@ print('types in')
 
 
 def types():
-    types = ['Background', 'Redirection', 'Binary']
+    types = ['Background', 'Flat', 'Redirection', 'Binary', 'Multibeam']
     return types
 
 
@@ -16,12 +16,16 @@ def new_type(frm_mid, typ):
     if typ == 'None':
         type_ref = type_none(frm_mid, 0)
         return type_ref
+    elif typ == 'Flat':
+        return type_flat(frm_mid)
     elif typ == 'Redirection':
         return type_dir(frm_mid)
     elif typ == 'Binary':
         return type_binary(frm_mid)
     elif typ == 'Background':
         return type_bg(frm_mid)
+    elif typ == 'Multibeam':
+        return type_multibeams_cb(frm_mid)
 
 
 class type_none(object):
@@ -61,6 +65,49 @@ class type_bg(object):
             phase = self.img
         else:
             phase = np.zeros([600, 792])
+        return phase
+
+    def close_(self):
+        self.frm_.destroy()
+
+
+class type_flat(object):
+    """shows flat settings for phase"""
+
+    def __init__(self, parent):
+        self.frm_ = tk.Frame(parent)
+        self.frm_.grid(row=0, column=0, sticky='nsew')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Flat')
+        lbl_frm.grid(row=0, column=0, sticky='ew')
+
+        lbl_phi = tk.Label(lbl_frm, text='Phase shift (255=2pi):')
+        vcmd = (parent.register(self.callback))
+        self.ent_flat = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'))
+        lbl_phi.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
+        self.ent_flat.grid(row=0, column=1, sticky='w', padx=(0, 10))
+
+    def callback(self, action, P, text):
+        # action=1 -> insert
+        if(action == '1'):
+            if text in '0123456789.-+':
+                try:
+                    float(P)
+                    return True
+                except ValueError:
+                    return False
+            else:
+                return False
+        else:
+            return True
+
+    def phase(self):
+        if self.ent_flat.get() != '':
+            phi = float(self.ent_flat.get())
+        else:
+            phi = 0
+        phase = np.ones([600, 792])*phi
         return phase
 
     def close_(self):
@@ -116,14 +163,14 @@ class type_dir(object):
         if xdir != '' and float(xdir) != 0:
             phx = np.outer(
                 np.ones([600, 1]),
-                np.arange(0, float(xdir)*792, float(xdir)))
+                np.arange(0, float(xdir)*792, float(xdir))) - float(xdir)*792/2
         else:
             phx = np.zeros([600, 792])
 
         if ydir != '' and float(ydir) != 0:
             phy = np.outer(
                 np.arange(0, float(ydir)*600, float(ydir)),
-                np.ones([1, 792]))
+                np.ones([1, 792])) - float(ydir)*600/2
         else:
             phy = np.zeros([600, 792])
 
@@ -213,10 +260,124 @@ class type_multibeams_cb(object):
 
     def __init__(self, parent):
         frm_ = tk.Frame(parent)
-        frm_.grid(row=0, column=0, sticky='nsew')
+        frm_.grid(row=3, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(frm_, text='Multibeam')
         lbl_frm.grid(row=0, column=0, sticky='ew')
 
+        # creating labels
+        lbl_n = tk.Label(lbl_frm, text='n^2; n=:')
+        lbl_hor = tk.Label(lbl_frm, text='Hor:')
+        lbl_vert = tk.Label(lbl_frm, text='Vert:')
+        lbl_phdif = tk.Label(lbl_frm, text='Phase tilt diff')
+        lbl_phsq = tk.Label(lbl_frm, text='Phase square diff')
+        lbl_intil = tk.Label(lbl_frm, text='Intensity tilt')
+        lbl_insqr = tk.Label(lbl_frm, text='Intensity curve')
+
+        # creating entries
+        vcmd = (parent.register(self.callback))
+        self.ent_n = tk.Entry(lbl_frm, width=5,  validate='all',
+                              validatecommand=(vcmd, '%d', '%P', '%S'))
+        self.ent_hpt = tk.Entry(lbl_frm, width=5,  validate='all',
+                                validatecommand=(vcmd, '%d', '%P', '%S'))
+        self.ent_vpt = tk.Entry(lbl_frm, width=5,  validate='all',
+                                validatecommand=(vcmd, '%d', '%P', '%S'))
+        self.ent_hps = tk.Entry(lbl_frm, width=5,  validate='all',
+                                validatecommand=(vcmd, '%d', '%P', '%S'))
+        self.ent_vps = tk.Entry(lbl_frm, width=5,  validate='all',
+                                validatecommand=(vcmd, '%d', '%P', '%S'))
+        self.ent_hit = tk.Entry(lbl_frm, width=5,  validate='all',
+                                validatecommand=(vcmd, '%d', '%P', '%S'))
+        self.ent_vit = tk.Entry(lbl_frm, width=5,  validate='all',
+                                validatecommand=(vcmd, '%d', '%P', '%S'))
+        self.ent_his = tk.Entry(lbl_frm, width=5,  validate='all',
+                                validatecommand=(vcmd, '%d', '%P', '%S'))
+        self.ent_vis = tk.Entry(lbl_frm, width=5,  validate='all',
+                                validatecommand=(vcmd, '%d', '%P', '%S'))
+
+        # setup
+        lbl_n.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=(5, 10))
+        self.ent_n.grid(row=0, column=1, sticky='w',
+                        padx=(0, 10), pady=(5, 10))
+        lbl_hor.grid(row=2, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_vert.grid(row=3, column=0, sticky='e', padx=(10, 0), pady=(5, 5))
+        lbl_phdif.grid(row=1, column=1, padx=5)
+        lbl_phsq.grid(row=1, column=2)
+        lbl_intil.grid(row=1, column=3, padx=5)
+        lbl_insqr.grid(row=1, column=4, padx=(0, 5))
+        self.ent_hpt.grid(row=2, column=1)
+        self.ent_hps.grid(row=2, column=2)
+        self.ent_hit.grid(row=2, column=3)
+        self.ent_his.grid(row=2, column=4, padx=(0, 5))
+        self.ent_vpt.grid(row=3, column=1, pady=(0, 5))
+        self.ent_vps.grid(row=3, column=2, pady=(0, 5))
+        self.ent_vit.grid(row=3, column=3, pady=(0, 5))
+        self.ent_vis.grid(row=3, column=4, padx=(0, 5), pady=(0, 5))
+
+    def callback(self, action, P, text):
+        # action=1 -> insert
+        if(action == '1'):
+            if text in '0123456789.-+':
+                try:
+                    float(P)
+                    return True
+                except ValueError:
+                    return False
+            else:
+                return False
+        else:
+            return True
+
     def phase(self):
-        phase = np.zeros([600, 792])
+        if self.ent_n.get() != '':
+            n = int(self.ent_n.get())
+        else:
+            n = 1
+
+        # getting the different phases for the beams
+        if self.ent_hpt.get() != '':
+            xtilt = float(self.ent_hpt.get())
+        else:
+            xtilt = 0
+        if self.ent_vpt.get() != '':
+            ytilt = float(self.ent_vpt.get())
+        else:
+            ytilt = 0
+        tilts = np.arange(-n+1, n+1, 2)  # excluding the last
+        xtilts = tilts*xtilt/2
+        ytilts = tilts*ytilt/2
+        phases = np.zeros([600, 792, n*n])
+        ind = 0
+        for xdir in xtilts:
+            for ydir in ytilts:
+                phases[:, :, ind] = self.phase_tilt(xdir, ydir)
+                ind += 1
+
+        # creating the total phase by adding the different ones
+        xrange = np.arange(0, 792, 1)
+        yrange = np.arange(0, 600, 1)
+        tot_phase = np.zeros([600, 792])
+        for x in xrange:
+            for y in yrange:
+                ind_phase = (x % n)*n + (y % n)  # x*n^1 + y*n^0 but x,y mod n
+                tot_phase[y, x] = phases[y, x, ind_phase]
+
+        return tot_phase
+
+    def phase_tilt(self, xdir, ydir):
+        print(xdir, ydir)
+        if xdir != '' and float(xdir) != 0:
+            phx = np.outer(
+                np.ones([600, 1]),
+                np.arange(0, float(xdir)*792, float(xdir))) - float(xdir)*792/2
+        else:
+            phx = np.zeros([600, 792])
+
+        if ydir != '' and float(ydir) != 0:
+            phy = np.outer(
+                np.arange(0, float(ydir)*600, float(ydir)),
+                np.ones([1, 792])) - float(ydir)*600/2
+        else:
+            phy = np.zeros([600, 792])
+
+        phase = phx + phy
         return phase
