@@ -67,6 +67,20 @@ class type_bg(object):
             phase = np.zeros([600, 792])
         return phase
 
+    def save_(self):
+        dict = {'filepath': self.lbl_file['text']}
+        return dict
+
+    def load_(self, dict):
+        self.lbl_file['text'] = dict['filepath']
+        try:
+            self.img = mpimg.imread(dict['filepath'])
+        except:
+            print('File missing')
+
+    def name_(self):
+        return 'Background'
+
     def close_(self):
         self.frm_.destroy()
 
@@ -76,15 +90,17 @@ class type_flat(object):
 
     def __init__(self, parent):
         self.frm_ = tk.Frame(parent)
-        self.frm_.grid(row=0, column=0, sticky='nsew')
+        self.frm_.grid(row=1, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Flat')
         lbl_frm.grid(row=0, column=0, sticky='ew')
 
         lbl_phi = tk.Label(lbl_frm, text='Phase shift (255=2pi):')
         vcmd = (parent.register(self.callback))
+        self.strvar_flat = tk.StringVar()
         self.ent_flat = tk.Entry(
             lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'))
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_flat)
         lbl_phi.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
         self.ent_flat.grid(row=0, column=1, sticky='w', padx=(0, 10))
 
@@ -110,6 +126,16 @@ class type_flat(object):
         phase = np.ones([600, 792])*phi
         return phase
 
+    def save_(self):
+        dict = {'flat_phase': self.ent_flat.get()}
+        return dict
+
+    def load_(self, dict):
+        self.strvar_flat.set(dict['flat_phase'])
+
+    def name_(self):
+        return 'Flat'
+
     def close_(self):
         self.frm_.destroy()
 
@@ -119,7 +145,7 @@ class type_dir(object):
 
     def __init__(self, parent):
         self.frm_ = tk.Frame(parent)
-        self.frm_.grid(row=1, column=0, sticky='nsew')
+        self.frm_.grid(row=2, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Redirection')
         lbl_frm.grid(row=0, column=0, sticky='ew', padx=5, pady=10)
 
@@ -128,12 +154,16 @@ class type_dir(object):
         lbl_ydir = tk.Label(lbl_frm, text='Steepness along y-direction:')
         lbl_255 = tk.Label(lbl_frm, text='(255 corresponds to 2pi Rad)')
         vcmd = (parent.register(self.callback))
+        self.strvar_xdir = tk.StringVar()
+        self.strvar_ydir = tk.StringVar()
         self.ent_xdir = tk.Entry(
             lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'))
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_xdir)
         self.ent_ydir = tk.Entry(
             lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'))
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_ydir)
 
         # Setting up
         lbl_xdir.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
@@ -177,6 +207,18 @@ class type_dir(object):
         phase = phx + phy
         return phase
 
+    def save_(self):
+        dict = {'ent_xdir': self.ent_xdir.get(),
+                'ent_ydir': self.ent_ydir.get()}
+        return dict
+
+    def load_(self, dict):
+        self.strvar_xdir.set(dict['ent_xdir'])
+        self.strvar_ydir.set(dict['ent_ydir'])
+
+    def name_(self):
+        return 'Redirection'
+
     def close_(self):
         self.frm_.destroy()
 
@@ -186,7 +228,7 @@ class type_binary(object):
 
     def __init__(self, parent):
         self.frm_ = tk.Frame(parent)
-        self.frm_.grid(row=2, column=0, sticky='nsew')
+        self.frm_.grid(row=3, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Binary')
         lbl_frm.grid(row=0, column=0, sticky='ew', padx=5, pady=10)
 
@@ -251,6 +293,23 @@ class type_binary(object):
 
         return phase_mat
 
+    def save_(self):
+        dict = {'direc': self.cbx_dir.get(),
+                'area': self.ent_area.get(),
+                'phi': self.ent_phi.get()}
+        return dict
+
+    def load_(self, dict):
+        tmpind = self.cbx_dir['values'].index(dict['direc'])
+        self.cbx_dir.current(tmpind)
+        self.ent_area.delete(0, tk.END)
+        self.ent_phi.delete(0, tk.END)
+        self.ent_area.insert(0, dict['area'])
+        self.ent_phi.insert(0, dict['phi'])
+
+    def name_(self):
+        return 'Binary'
+
     def close_(self):
         self.frm_.destroy()
 
@@ -259,9 +318,9 @@ class type_multibeams_cb(object):
     """shows multibeam checkerboard settings for phase"""
 
     def __init__(self, parent):
-        frm_ = tk.Frame(parent)
-        frm_.grid(row=3, column=0, sticky='nsew')
-        lbl_frm = tk.LabelFrame(frm_, text='Multibeam')
+        self.frm_ = tk.Frame(parent)
+        self.frm_.grid(row=4, column=0, sticky='nsew')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Multibeam')
         lbl_frm.grid(row=0, column=0, sticky='ew')
 
         # creating labels
@@ -381,3 +440,41 @@ class type_multibeams_cb(object):
 
         phase = phx + phy
         return phase
+
+    def save_(self):
+        dict = {'n': self.ent_n.get(),
+                'hpt': self.ent_hpt.get(),
+                'hps': self.ent_hps.get(),
+                'hit': self.ent_hit.get(),
+                'his': self.ent_his.get(),
+                'vpt': self.ent_vpt.get(),
+                'vps': self.ent_vps.get(),
+                'vit': self.ent_vit.get(),
+                'vis': self.ent_vis.get()}
+        return dict
+
+    def load_(self, dict):
+        self.ent_n.delete(0, tk.END)
+        self.ent_hpt.delete(0, tk.END)
+        self.ent_hps.delete(0, tk.END)
+        self.ent_hit.delete(0, tk.END)
+        self.ent_his.delete(0, tk.END)
+        self.ent_vpt.delete(0, tk.END)
+        self.ent_vps.delete(0, tk.END)
+        self.ent_vit.delete(0, tk.END)
+        self.ent_vis.delete(0, tk.END)
+        self.ent_n.insert(0, dict['n'])
+        self.ent_hpt.insert(0, dict['hpt'])
+        self.ent_hps.insert(0, dict['hps'])
+        self.ent_hit.insert(0, dict['hit'])
+        self.ent_his.insert(0, dict['his'])
+        self.ent_vpt.insert(0, dict['vpt'])
+        self.ent_vps.insert(0, dict['vps'])
+        self.ent_vit.insert(0, dict['vit'])
+        self.ent_vis.insert(0, dict['vis'])
+
+    def name_(self):
+        return 'Multibeam'
+
+    def close_(self):
+        self.frm_.destroy()

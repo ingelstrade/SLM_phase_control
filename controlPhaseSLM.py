@@ -2,6 +2,8 @@ import tkinter as tk
 from tkinter import ttk
 import tkinter.font as tkFont
 import numpy as np
+from tkinter.filedialog import askopenfilename, asksaveasfilename
+import json
 import phase_settings
 import preview_window
 import publish_window
@@ -22,6 +24,7 @@ class main_screen(object):
         frm_top = tk.Frame(self.main_win)
         self.frm_mid = tk.Frame(self.main_win)
         frm_bot = tk.Frame(self.main_win)
+        frm_topb = tk.Frame(frm_top)
 
         # Creating labels
         lbl_title = tk.Label(
@@ -34,6 +37,8 @@ class main_screen(object):
         but_prev = tk.Button(frm_bot, text='Preview', command=self.open_prev)
         but_pub = tk.Button(frm_bot, text='Publish', command=self.open_pub)
         but_exit = tk.Button(frm_bot, text='EXIT', command=self.exit_prog)
+        but_save = tk.Button(frm_topb, text='Save Settings', command=self.save)
+        but_load = tk.Button(frm_topb, text='Load Settings', command=self.load)
 
         # Creating entry
         self.ent_scr = tk.Entry(frm_top, width=15)
@@ -49,6 +54,9 @@ class main_screen(object):
         lbl_screen.grid(row=0, column=0, sticky='e', padx=10, pady=10)
         self.ent_scr.grid(row=0, column=1, sticky='w', padx=(0, 10))
         self.setup_box(frm_top)  # sets up the checkboxes separately
+        frm_topb.grid(row=1, column=1, sticky='nsew')
+        but_save.grid(row=0, padx=5, pady=5)
+        but_load.grid(row=1, padx=5)
 
         # Setting up bot frame
         but_prev.grid(row=0, column=0, padx=10, pady=5, ipadx=5)
@@ -64,12 +72,13 @@ class main_screen(object):
     def setup_box(self, frm_):
         frm_box = tk.LabelFrame(frm_, text='Phases enabled')
         frm_box.grid(column=0)
-        self.types = phase_settings.types()  # reads in the different phase types
+        self.types = phase_settings.types()  # reads in  different phase types
         self.vars = []  # init a list holding the variables from the boxes
         self.phase_refs = []  # init a list to hold the references to types
         self.active_phases = []
-        commands = [self.start_stop_0, self.start_stop_1, self.start_stop_2,
-                    self.start_stop_3, self.start_stop_4]
+        self.commands = [self.start_stop_0, self.start_stop_1,
+                         self.start_stop_2,
+                         self.start_stop_3, self.start_stop_4]
         for ind, typ in enumerate(self.types):
             self.var_ = (tk.IntVar())
             self.vars.append(self.var_)
@@ -77,7 +86,7 @@ class main_screen(object):
             self.box_ = tk.Checkbutton(frm_box, text=typ,
                                        variable=self.vars[ind],
                                        onvalue=1, offvalue=0,
-                                       command=commands[ind])
+                                       command=self.commands[ind])
             self.box_.grid(row=ind, sticky='w')
 
 # It is a bit not so nice, but box commands cant send args. currently able to
@@ -114,6 +123,40 @@ class main_screen(object):
         for phase_types in self.active_phases:
             phase += phase_types.phase()
         return phase
+
+    def save(self):
+        """Save the current settings as a new file."""
+        filepath = asksaveasfilename(
+            defaultextension='txt',
+            filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')]
+        )
+        if not filepath:
+            return
+        dict = {}
+        with open(filepath, 'w') as f:
+            for phase in self.active_phases:
+                dict[phase.name_()] = phase.save_()
+            f.write(json.dumps(dict))
+
+    def load(self):
+        filepath = askopenfilename(
+            filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')]
+        )
+        if not filepath:
+            return
+        with open(filepath, 'r') as f:
+            dics = json.loads(f.read())
+        for num, var in enumerate(self.vars):  # resetting everything
+            var.set(0)
+            self.commands[num]()
+        for key in dics.keys():
+            try:
+                ind = self.types.index(key)
+                self.vars[ind].set(1)
+                self.commands[ind]()
+                self.phase_refs[ind].load_(dics[key])
+            except ValueError:
+                print(key + ' value problems.')
 
     def exit_prog(self):
         self.main_win.destroy()
