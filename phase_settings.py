@@ -8,15 +8,13 @@ print('types in')
 
 
 def types():
-    types = ['Background', 'Flat', 'Redirection', 'Binary', 'Multibeam']
+    types = ['Background', 'Flat', 'Redirection', 'Binary', 'Lens',
+             'Multibeam']
     return types
 
 
 def new_type(frm_mid, typ):
-    if typ == 'None':
-        type_ref = type_none(frm_mid, 0)
-        return type_ref
-    elif typ == 'Flat':
+    if typ == 'Flat':
         return type_flat(frm_mid)
     elif typ == 'Redirection':
         return type_dir(frm_mid)
@@ -24,16 +22,10 @@ def new_type(frm_mid, typ):
         return type_binary(frm_mid)
     elif typ == 'Background':
         return type_bg(frm_mid)
+    elif typ == 'Lens':
+        return type_lens(frm_mid)
     elif typ == 'Multibeam':
         return type_multibeams_cb(frm_mid)
-
-
-class type_none(object):
-    """shows no settings for phase"""
-
-    def __init__(self, parent, row_):
-        frm_ = tk.Frame(parent)
-        frm_.grid(row=row_, column=0, sticky='nsew')
 
 
 class type_bg(object):
@@ -314,12 +306,92 @@ class type_binary(object):
         self.frm_.destroy()
 
 
-class type_multibeams_cb(object):
+class type_lens(object):
     """shows multibeam checkerboard settings for phase"""
 
     def __init__(self, parent):
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=4, column=0, sticky='nsew')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Lens')
+        lbl_frm.grid(row=0, column=0, sticky='ew')
+
+        # creating labels
+        lbl_rad = tk.Label(lbl_frm, text='Radius [mm]:')
+        lbl_fac = tk.Label(lbl_frm, text='Multiplication factor [Rad/mmglas]:')
+
+        # creating entries
+        vcmd = (parent.register(self.callback))
+        self.strvar_rad = tk.StringVar()
+        self.ent_rad = tk.Entry(lbl_frm, width=5,  validate='all',
+                                validatecommand=(vcmd, '%d', '%P', '%S'),
+                                textvariable=self.strvar_rad)
+        self.strvar_fac = tk.StringVar()
+        self.ent_fac = tk.Entry(lbl_frm, width=5,  validate='all',
+                                validatecommand=(vcmd, '%d', '%P', '%S'),
+                                textvariable=self.strvar_fac)
+        self.strvar_fac.set('150000')
+
+        # setup
+        lbl_rad.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_fac.grid(row=1, column=0, sticky='e', padx=(10, 0))
+        self.ent_rad.grid(row=0, column=1, sticky='w', padx=(0, 10))
+        self.ent_fac.grid(row=1, column=1, sticky='w', padx=(0, 10), pady=5)
+
+    def callback(self, action, P, text):
+        # action=1 -> insert
+        if(action == '1'):
+            if text in '0123456789.-+':
+                try:
+                    float(P)
+                    return True
+                except ValueError:
+                    return False
+            else:
+                return False
+        else:
+            return True
+
+    def phase(self):
+        # getting the hyperbolical curve on the phases
+        if self.ent_rad.get() != '':
+            rad = float(self.ent_rad.get())
+        else:
+            rad = 1000000
+        if self.ent_fac.get() != '':
+            fac = float(self.ent_fac.get())
+        else:
+            fac = 0
+        radsign = np.sign(rad)
+        rad = np.abs(rad)
+        x = np.linspace(-7.92, 7.92, num=792)  # chipsize 15.84*12mm
+        y = np.linspace(-6, 6, num=600)
+        [X, Y] = np.meshgrid(x, y)
+        R = np.sqrt(X**2+Y**2)  # radius on a 2d array
+        Z = fac*radsign*(np.sqrt(rad**2+R**2)-rad)
+        return Z
+
+    def save_(self):
+        dict = {'rad': self.ent_rad.get(),
+                'fac': self.ent_fac.get()}
+        return dict
+
+    def load_(self, dict):
+        self.strvar_rad.set(dict['rad'])
+        self.strvar_fac.set(dict['fac'])
+
+    def name_(self):
+        return 'Lens'
+
+    def close_(self):
+        self.frm_.destroy()
+
+
+class type_multibeams_cb(object):
+    """shows multibeam checkerboard settings for phase"""
+
+    def __init__(self, parent):
+        self.frm_ = tk.Frame(parent)
+        self.frm_.grid(row=5, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Multibeam')
         lbl_frm.grid(row=0, column=0, sticky='ew')
 
@@ -410,6 +482,27 @@ class type_multibeams_cb(object):
             for ydir in ytilts:
                 phases[:, :, ind] = self.phase_tilt(xdir, ydir)
                 ind += 1
+
+        # getting the hyperbolical curve on the phases
+        if self.ent_hps.get() != '':
+            xps = float(self.ent_hps.get())
+        else:
+            xps = 0
+        if self.ent_vps.get() != '':
+            yps = float(self.ent_vps.get())
+        else:
+            yps = 0
+        xsign = np.sign(xps)
+        ysign = np.sign(yps)
+        xrad = np.abs(xps)
+        yrad = np.abs(yps)
+        x = np.linspace(-7.92, 7.92, num=792)  # chipsize 15.84*12mm
+        y = np.linspace(-6, 6, num=600)
+        [X, Y] = np.meshgrid(x, y)
+        R = np.sqrt(X**2+Y**2)
+        Z = yrad*xsign*(np.sqrt(xrad**2+R**2)-xrad)
+        for ind in range(n**2):
+            phases[:, :, ind] += Z
 
         # creating the total phase by adding the different ones
         xrange = np.arange(0, 792, 1)

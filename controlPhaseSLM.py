@@ -77,8 +77,9 @@ class main_screen(object):
         self.phase_refs = []  # init a list to hold the references to types
         self.active_phases = []
         self.commands = [self.start_stop_0, self.start_stop_1,
-                         self.start_stop_2,
-                         self.start_stop_3, self.start_stop_4]
+                         self.start_stop_2, self.start_stop_3,
+                         self.start_stop_4, self.start_stop_5,
+                         self.start_stop_6]
         for ind, typ in enumerate(self.types):
             self.var_ = (tk.IntVar())
             self.vars.append(self.var_)
@@ -105,6 +106,12 @@ class main_screen(object):
 
     def start_stop_4(self):
         self.start_stop_t(4)
+
+    def start_stop_5(self):
+        self.start_stop_t(5)
+
+    def start_stop_6(self):
+        self.start_stop_t(6)
 
     def start_stop_t(self, ind):
         if self.vars[ind].get() == 1:
