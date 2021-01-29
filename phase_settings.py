@@ -395,54 +395,77 @@ class type_multibeams_cb(object):
         lbl_frm = tk.LabelFrame(self.frm_, text='Multibeam')
         lbl_frm.grid(row=0, column=0, sticky='ew')
 
+        # creating frames
+        frm_n = tk.Frame(lbl_frm)
+        frm_sprrad = tk.Frame(lbl_frm)
+        frm_spr = tk.Frame(frm_sprrad)
+        frm_rad = tk.Frame(frm_sprrad)
+        frm_int = tk.Frame(lbl_frm)
+
         # creating labels
-        lbl_n = tk.Label(lbl_frm, text='n^2; n=:')
-        lbl_hor = tk.Label(lbl_frm, text='Hor:')
-        lbl_vert = tk.Label(lbl_frm, text='Vert:')
-        lbl_phdif = tk.Label(lbl_frm, text='Phase tilt diff')
-        lbl_phsq = tk.Label(lbl_frm, text='Phase square diff')
-        lbl_intil = tk.Label(lbl_frm, text='Intensity tilt')
-        lbl_insqr = tk.Label(lbl_frm, text='Intensity curve')
+        lbl_n = tk.Label(frm_n, text='n^2; n=:')
+        lbl_hor = tk.Label(frm_int, text='Hor:')
+        lbl_vert = tk.Label(frm_int, text='Vert:')
+        lbl_intil = tk.Label(frm_int, text='Intensity tilt')
+        lbl_insqr = tk.Label(frm_int, text='Intensity curve')
+        lbl_horspr = tk.Label(frm_spr, text='Horizontal spread:')
+        lbl_verspr = tk.Label(frm_spr, text='Vertical spread:')
+        lbl_cph = tk.Label(frm_sprrad, text='Hyp.phase diff')
+        lbl_rad = tk.Label(frm_rad, text='Radius:')
+        lbl_amp = tk.Label(frm_rad, text='Amplitude:')
 
         # creating entries
         vcmd = (parent.register(self.callback))
-        self.ent_n = tk.Entry(lbl_frm, width=5,  validate='all',
+        self.ent_n = tk.Entry(frm_n, width=5,  validate='all',
                               validatecommand=(vcmd, '%d', '%P', '%S'))
-        self.ent_hpt = tk.Entry(lbl_frm, width=5,  validate='all',
+        self.ent_hpt = tk.Entry(frm_spr, width=5,  validate='all',
                                 validatecommand=(vcmd, '%d', '%P', '%S'))
-        self.ent_vpt = tk.Entry(lbl_frm, width=5,  validate='all',
+        self.ent_vpt = tk.Entry(frm_spr, width=5,  validate='all',
                                 validatecommand=(vcmd, '%d', '%P', '%S'))
-        self.ent_hps = tk.Entry(lbl_frm, width=5,  validate='all',
+        self.ent_rad = tk.Entry(frm_rad, width=5,  validate='all',
                                 validatecommand=(vcmd, '%d', '%P', '%S'))
-        self.ent_vps = tk.Entry(lbl_frm, width=5,  validate='all',
+        self.ent_amp = tk.Entry(frm_rad, width=5,  validate='all',
                                 validatecommand=(vcmd, '%d', '%P', '%S'))
-        self.ent_hit = tk.Entry(lbl_frm, width=5,  validate='all',
+        self.ent_hit = tk.Entry(frm_int, width=5,  validate='all',
                                 validatecommand=(vcmd, '%d', '%P', '%S'))
-        self.ent_vit = tk.Entry(lbl_frm, width=5,  validate='all',
+        self.ent_vit = tk.Entry(frm_int, width=5,  validate='all',
                                 validatecommand=(vcmd, '%d', '%P', '%S'))
-        self.ent_his = tk.Entry(lbl_frm, width=5,  validate='all',
+        self.ent_his = tk.Entry(frm_int, width=5,  validate='all',
                                 validatecommand=(vcmd, '%d', '%P', '%S'))
-        self.ent_vis = tk.Entry(lbl_frm, width=5,  validate='all',
+        self.ent_vis = tk.Entry(frm_int, width=5,  validate='all',
                                 validatecommand=(vcmd, '%d', '%P', '%S'))
 
         # setup
+        frm_n.grid(row=0, sticky='nsew')
+        frm_sprrad.grid(row=1, sticky='nsew')
+        frm_int.grid(row=2, sticky='nsew')
+        frm_spr.grid(row=1, column=0, sticky='nsew')
+        frm_rad.grid(row=1, column=1, sticky='ew')
+
         lbl_n.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=(5, 10))
         self.ent_n.grid(row=0, column=1, sticky='w',
                         padx=(0, 10), pady=(5, 10))
-        lbl_hor.grid(row=2, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_vert.grid(row=3, column=0, sticky='e', padx=(10, 0), pady=(5, 5))
-        lbl_phdif.grid(row=1, column=1, padx=5)
-        lbl_phsq.grid(row=1, column=2)
-        lbl_intil.grid(row=1, column=3, padx=5)
-        lbl_insqr.grid(row=1, column=4, padx=(0, 5))
-        self.ent_hpt.grid(row=2, column=1)
-        self.ent_hps.grid(row=2, column=2)
-        self.ent_hit.grid(row=2, column=3)
-        self.ent_his.grid(row=2, column=4, padx=(0, 5))
-        self.ent_vpt.grid(row=3, column=1, pady=(0, 5))
-        self.ent_vps.grid(row=3, column=2, pady=(0, 5))
-        self.ent_vit.grid(row=3, column=3, pady=(0, 5))
-        self.ent_vis.grid(row=3, column=4, padx=(0, 5), pady=(0, 5))
+
+        lbl_horspr.grid(row=0, column=0, sticky='e', padx=(10, 0))
+        lbl_verspr.grid(row=1, column=0, sticky='e', padx=(10, 0))
+        self.ent_hpt.grid(row=0, column=1, sticky='w')
+        self.ent_vpt.grid(row=1, column=1, sticky='w')
+
+        lbl_cph.grid(row=0, column=1, sticky='ew')
+
+        lbl_rad.grid(row=0, column=0, sticky='e', padx=(15, 0))
+        lbl_amp.grid(row=1, column=0, sticky='e', padx=(15, 0))
+        self.ent_rad.grid(row=0, column=1, sticky='w', padx=(0, 5))
+        self.ent_amp.grid(row=1, column=1, sticky='w', padx=(0, 5))
+
+        lbl_hor.grid(row=1, column=0, sticky='e', padx=(10, 0))
+        lbl_vert.grid(row=2, column=0, sticky='e', padx=(10, 0))
+        lbl_intil.grid(row=0, column=1, padx=5, pady=(10, 0))
+        lbl_insqr.grid(row=0, column=2, padx=(0, 5), pady=(10, 0))
+        self.ent_hit.grid(row=1, column=1)
+        self.ent_his.grid(row=1, column=2, padx=(0, 5))
+        self.ent_vit.grid(row=2, column=1, pady=(0, 5))
+        self.ent_vis.grid(row=2, column=2, padx=(0, 5), pady=(0, 5))
 
     def callback(self, action, P, text):
         # action=1 -> insert
@@ -484,25 +507,100 @@ class type_multibeams_cb(object):
                 ind += 1
 
         # getting the hyperbolical curve on the phases
-        if self.ent_hps.get() != '':
-            xps = float(self.ent_hps.get())
+        if self.ent_rad.get() != '':
+            tmprad = float(self.ent_rad.get())
         else:
-            xps = 0
-        if self.ent_vps.get() != '':
-            yps = float(self.ent_vps.get())
+            tmprad = 0
+        if self.ent_amp.get() != '':
+            amp = float(self.ent_amp.get())
         else:
-            yps = 0
-        xsign = np.sign(xps)
-        ysign = np.sign(yps)
-        xrad = np.abs(xps)
-        yrad = np.abs(yps)
-        x = np.linspace(-7.92, 7.92, num=792)  # chipsize 15.84*12mm
-        y = np.linspace(-6, 6, num=600)
+            amp = 0
+        radsign = np.sign(tmprad)
+        rad = np.abs(tmprad)
+        x = tilts
+        y = tilts
         [X, Y] = np.meshgrid(x, y)
         R = np.sqrt(X**2+Y**2)
-        Z = yrad*xsign*(np.sqrt(xrad**2+R**2)-xrad)
-        for ind in range(n**2):
-            phases[:, :, ind] += Z
+        Z = amp*radsign*(np.sqrt(rad**2+R**2)-rad)
+        ind = 0
+        for row in Z:
+            for elem in row:
+                phases[:, :, ind] = elem + phases[:, :, ind]
+                ind += 1
+
+        # setting up for intensity control
+        if self.ent_hit.get() != '':
+            xit = float(self.ent_hit.get())
+        else:
+            xit = 0
+        if self.ent_vit.get() != '':
+            yit = float(self.ent_vit.get())
+        else:
+            yit = 0
+        if self.ent_his.get() != '':
+            xis = float(self.ent_his.get())
+        else:
+            xis = 0
+        if self.ent_vis.get() != '':
+            yis = float(self.ent_vis.get())
+        else:
+            yis = 0
+        intensities = np.ones(n**2)
+        totnum = np.ceil(600*792/(n**2))  # nbr of pixels for each phase
+        phase_nbr = np.outer(np.arange(n**2), np.ones([int(totnum)]))
+
+        # modifying linear intensities
+        if xit != 0:
+            xits = np.linspace(-((n-1)/2*xit), ((n-1)/2*xit), num=n)
+        else:
+            xits = np.zeros(n)
+        if yit != 0:
+            yits = np.linspace(-((n-1)/2*yit), ((n-1)/2*yit), num=n)
+        else:
+            yits = np.zeros(n)
+        ii = 0
+        for tmpx in xits:
+            intensities[n*ii:n*(ii+1)] = (tmpx + yits + 1)
+            ii += 1
+
+        # modifying square intensities
+        spread = tilts
+        xiss = -xis * (spread**2 - spread[0]**2)
+        yiss = -yis * (spread**2 - spread[0]**2)
+        ii = 0
+        for tmpx in xiss:
+            intensities[n*ii:n*(ii+1)] += (tmpx + yiss + 1)
+            ii += 1
+
+        # creating the intensity arrays (which phase to have at which pixel)
+        intensities[intensities < 0] = 0
+        intensities = intensities/np.sum(intensities)*n**2  # normalize
+        tmpint = intensities-1
+        beam = 0
+        strong_beams = []
+        strong_beams_int = []
+        weak_beams = []
+        weak_beams_int = []
+        for intens in tmpint:
+            if intens > 0:
+                strong_beams.append(beam)
+                strong_beams_int.append(intens)
+            elif intens < 0:
+                weak_beams.append(beam)
+                weak_beams_int.append(intens)
+            beam += 1
+        # normalize to one
+        strong_beams_int = strong_beams_int/np.sum(strong_beams_int)
+        for wbeam, wbeam_int in zip(weak_beams, weak_beams_int):
+            nbr_pixels = np.ceil(np.abs(wbeam_int)*totnum)  # nbrpxls to change
+            nbr_each = np.ceil(nbr_pixels*strong_beams_int)
+            strt = 0
+            for nbr, sbeam in zip(nbr_each, strong_beams):
+                phase_nbr[int(wbeam), strt:(strt+int(nbr))] = sbeam
+                strt += int(nbr)
+        rng = np.random.default_rng()
+        rng.shuffle(phase_nbr, axis=1)  # mixing so the changed are not tgether
+        col = np.zeros(n**2)  # keeping track of which column in phase_nbr
 
         # creating the total phase by adding the different ones
         xrange = np.arange(0, 792, 1)
@@ -511,12 +609,13 @@ class type_multibeams_cb(object):
         for x in xrange:
             for y in yrange:
                 ind_phase = (x % n)*n + (y % n)  # x*n^1 + y*n^0 but x,y mod n
-                tot_phase[y, x] = phases[y, x, ind_phase]
+                tot_phase[y, x] = phases[
+                    y, x, int(phase_nbr[ind_phase, int(col[ind_phase])])]
+                col[ind_phase] += 1
 
         return tot_phase
 
     def phase_tilt(self, xdir, ydir):
-        print(xdir, ydir)
         if xdir != '' and float(xdir) != 0:
             phx = np.outer(
                 np.ones([600, 1]),
