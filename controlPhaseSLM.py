@@ -25,6 +25,7 @@ class main_screen(object):
         self.frm_mid = tk.Frame(self.main_win)
         frm_bot = tk.Frame(self.main_win)
         frm_topb = tk.Frame(frm_top)
+        self.frm_side = tk.Frame(self.main_win)
 
         # Creating labels
         lbl_title = tk.Label(
@@ -39,6 +40,9 @@ class main_screen(object):
         but_exit = tk.Button(frm_bot, text='EXIT', command=self.exit_prog)
         but_save = tk.Button(frm_topb, text='Save Settings', command=self.save)
         but_load = tk.Button(frm_topb, text='Load Settings', command=self.load)
+        self.but_scan = tk.Button(
+            frm_topb, text='Scan Options', command=self.scan_options,
+            relief="raised")
 
         # Creating entry
         self.ent_scr = tk.Entry(frm_top, width=15)
@@ -49,6 +53,7 @@ class main_screen(object):
         frm_top.grid(row=1, column=0, sticky='ew')
         self.frm_mid.grid(row=2, column=0, sticky='nsew')
         frm_bot.grid(row=3, column=0)
+        self.frm_side.grid(row=1, column=1, sticky='nsew')
 
         # Setting up top frame
         lbl_screen.grid(row=0, column=0, sticky='e', padx=10, pady=10)
@@ -57,6 +62,7 @@ class main_screen(object):
         frm_topb.grid(row=1, column=1, sticky='nsew')
         but_save.grid(row=0, padx=5, pady=5)
         but_load.grid(row=1, padx=5)
+        self.but_scan.grid(row=2, padx=5, pady=5)
 
         # Setting up bot frame
         but_prev.grid(row=0, column=0, padx=10, pady=5, ipadx=5)
@@ -164,6 +170,115 @@ class main_screen(object):
                 self.phase_refs[ind].load_(dics[key])
             except ValueError:
                 print(key + ' value problems.')
+
+    def scan_options(self):
+        if self.but_scan.config('relief')[-1] == 'sunken':
+            self.so_frm.destroy()
+            self.but_scan.config(relief="raised")
+        else:
+            self.but_scan.config(relief="sunken")
+            self.so_frm = tk.LabelFrame(self.frm_side, text='Scan options')
+            self.so_frm.grid(row=0, sticky='nsew')
+
+            # creating frames
+            frm_scpar = tk.Frame(self.so_frm)
+            frm_file = tk.Frame(self.so_frm)
+            frm_load = tk.Frame(self.so_frm)
+
+            # creating labels
+            lbl_scpar = tk.Label(frm_scpar, text='Scan parameter')
+            lbl_val = tk.Label(frm_scpar, text='Value (strt:step:end)')
+            lbl_actf = tk.Label(frm_file, text='Active file:')
+            self.lbl_file = tk.Label(frm_file, text='')
+            lbl_delay = tk.Label(
+                frm_load, text='Delay between each phase [s]:')
+
+            # creating entries
+            self.cbx_scpar = ttk.Combobox(
+                frm_scpar, values=['Select'], postcommand=self.scan_params)
+            self.cbx_scpar.current(0)
+            vcmd = (self.frm_side.register(self.callback))
+            self.strvar_val = tk.StringVar()
+            ent_val = tk.Entry(frm_scpar,  width=10,  validate='all',
+                               validatecommand=(vcmd, '%d', '%P', '%S'),
+                               textvariable=self.strvar_val)
+            self.strvar_delay = tk.StringVar()
+            ent_delay = tk.Entry(frm_load, width=5, validate='all',
+                                 validatecommand=(vcmd, '%d', '%P', '%S'),
+                                 textvariable=self.strvar_delay)
+
+            # creating buttons
+            but_crt = tk.Button(
+                self.so_frm, text='Create loading file',
+                command=self.create_loadingfile)
+            but_openload = tk.Button(
+                self.so_frm, text='Open existing loading file',
+                command=self.open_loadingfile)
+            self.but_enable_scan = tk.Button(
+                self.so_frm, text='Enable scan', command=self.enable_scan)
+
+            # setup
+            frm_scpar.grid(row=0, sticky='nsew')
+            but_crt.grid(row=1, sticky='ew')
+            but_openload.grid(row=2, sticky='ew')
+            frm_file.grid(row=3, sticky='w')
+            frm_load.grid(row=4, sticky='nsew')
+            self.but_enable_scan.grid(row=5)
+
+            lbl_scpar.grid(row=0, column=0, sticky='e')
+            lbl_val.grid(row=1, column=0, sticky='e')
+            self.cbx_scpar.grid(row=0, column=1, sticky='w')
+            ent_val.grid(row=1, column=1, sticky='w')
+
+            lbl_actf.grid(row=0, column=0)
+            self.lbl_file.grid(row=0, column=1)
+
+            lbl_delay.grid(row=0, column=0, sticky='e')
+            ent_delay.grid(row=0, column=1, sticky='w')
+
+    def callback(self, action, P, text):
+        # action=1 -> insert
+        if(action == '1'):
+            if text in '0123456789.-+:':
+                #    try:
+                #        float(P)
+                return True
+            #    except ValueError:
+            #        return False
+            else:
+                return False
+        else:
+            return True
+
+    def scan_params(self):
+        scparams = ()
+        for phase in self.active_phases:
+            phparam = phase.save_()
+            for param in phparam.keys():
+                scparams.append(phase.name_() + ':' + param)
+        self.cbx_scpar['values'] = scparams
+        return
+
+    def create_loadingfile(self):
+        return
+
+    def open_loadingfile(self):
+        filepath = askopenfilename(
+            filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')]
+        )
+        if not filepath:
+            return
+        self.lbl_file['text'] = f'{filepath}'
+        return
+
+    def enable_scan(self):
+        if self.but_enable_scan['relief'] == 'sunken':
+            self.but_enable_scan['relief'] = 'raised'
+            self.but_enable_scan['text'] = 'Enable scan'
+        else:
+            self.but_enable_scan['relief'] = 'sunken'
+            self.but_enable_scan['text'] = 'Scan enabled'
+        return
 
     def exit_prog(self):
         self.main_win.destroy()
