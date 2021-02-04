@@ -4,6 +4,7 @@ import tkinter.font as tkFont
 import numpy as np
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 import json
+import os
 import phase_settings
 import preview_window
 import publish_window
@@ -137,26 +138,28 @@ class main_screen(object):
             phase += phase_types.phase()
         return phase
 
-    def save(self):
+    def save(self, filepath=None):
         """Save the current settings as a new file."""
-        filepath = asksaveasfilename(
-            defaultextension='txt',
-            filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')]
-        )
-        if not filepath:
-            return
+        if filepath == '':
+            filepath = asksaveasfilename(
+                defaultextension='txt',
+                filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')]
+            )
+            if not filepath:
+                return
         dict = {}
         with open(filepath, 'w') as f:
             for phase in self.active_phases:
                 dict[phase.name_()] = phase.save_()
             f.write(json.dumps(dict))
 
-    def load(self):
-        filepath = askopenfilename(
-            filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')]
-        )
-        if not filepath:
-            return
+    def load(self, filepath=None):
+        if filepath == '':
+            filepath = askopenfilename(
+                filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')]
+            )
+            if not filepath:
+                return
         with open(filepath, 'r') as f:
             dics = json.loads(f.read())
         for num, var in enumerate(self.vars):  # resetting everything
@@ -187,7 +190,7 @@ class main_screen(object):
 
             # creating labels
             lbl_scpar = tk.Label(frm_scpar, text='Scan parameter')
-            lbl_val = tk.Label(frm_scpar, text='Value (strt:step:end)')
+            lbl_val = tk.Label(frm_scpar, text='Value (strt:stop:num)')
             lbl_actf = tk.Label(frm_file, text='Active file:')
             self.lbl_file = tk.Label(frm_file, text='')
             lbl_delay = tk.Label(
@@ -208,7 +211,7 @@ class main_screen(object):
                                  textvariable=self.strvar_delay)
 
             # creating buttons
-            but_crt = tk.Button(
+            self.but_crt = tk.Button(
                 self.so_frm, text='Create loading file',
                 command=self.create_loadingfile)
             but_openload = tk.Button(
@@ -219,7 +222,7 @@ class main_screen(object):
 
             # setup
             frm_scpar.grid(row=0, sticky='nsew')
-            but_crt.grid(row=1, sticky='ew')
+            self.but_crt.grid(row=1, sticky='ew')
             but_openload.grid(row=2, sticky='ew')
             frm_file.grid(row=3, sticky='w')
             frm_load.grid(row=4, sticky='nsew')
@@ -251,7 +254,7 @@ class main_screen(object):
             return True
 
     def scan_params(self):
-        scparams = ()
+        scparams = []
         for phase in self.active_phases:
             phparam = phase.save_()
             for param in phparam.keys():
@@ -260,6 +263,50 @@ class main_screen(object):
         return
 
     def create_loadingfile(self):
+        if self.strvar_val.get() != '':
+            strval = self.strvar_val.get()
+            listval = strval.split(':', 3)
+            try:
+                strt = float(listval[0])
+                stop = float(listval[1])
+                num = int(listval[2])
+                val_range = np.linspace(strt, stop, num)
+            except (ValueError, IndexError) as err:
+                self.but_crt['text'] = f'Create loading file : {err}'
+                return
+
+        else:
+            print('Empty value')
+            return
+        print(f'{strt}_{stop}_{num}')
+
+        cwd = os.getcwd()
+        print('current cwd is {}'.format(cwd))
+        dirstr = '\\SLM_phase_scan_files'
+        if not os.path.exists(cwd + dirstr):
+            os.mkdir(cwd + dirstr)
+        # create folder
+        scparam = self.cbx_scpar.get().split(':')
+        folder_str = '\\{}_{}_{}_{}_{}'.format(
+            scparam[0], scparam[1], strt, stop, num)
+        cwd = cwd + dirstr + folder_str
+        if not os.path.exists(cwd):
+            os.mkdir(cwd)
+
+        # create file for filepaths
+        ind = self.types.index(scparam[0])
+        param_dic = self.phase_refs[ind].save_()
+        with open(cwd + '\\' + 'filepaths.txt', 'w') as logfile:
+            for val in val_range:
+                param_dic[scparam[1]] = val
+                self.phase_refs[ind].load_(param_dic)
+                filepath = f'{cwd}\\{val}.txt'
+                print(filepath)
+                self.save(filepath)
+                logfile.write(filepath + '\n')
+        self.lbl_file['text'] = cwd + '\\' + 'filepaths.txt'
+
+        self.but_crt['text'] = 'Create loading file : OK'
         return
 
     def open_loadingfile(self):
