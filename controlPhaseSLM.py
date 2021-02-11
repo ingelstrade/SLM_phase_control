@@ -21,6 +21,7 @@ class main_screen(object):
 
         self.main_win.columnconfigure(0, minsize=250, weight=1)
         self.main_win.rowconfigure(2, minsize=100, weight=1)
+        self.pub_win = None
 
         # creating frames
         frm_top = tk.Frame(self.main_win)
@@ -81,54 +82,71 @@ class main_screen(object):
                 filelist = self.load_filelist()
                 var = tk.IntVar()
                 for filepath in filelist:
+                    if self.var_stop_scan.get():
+                        self.var_stop_scan.set(0)
+                        return
                     root.after(int(delay*1000), var.set, 1)
                     self.load(filepath)
-                    self.prev_win = preview_window.prev_screen(self
+                    self.prev_win = preview_window.prev_screen(self)
                     root.wait_variable(var)
             else:
-                self.prev_win=preview_window.prev_screen(self)
+                self.prev_win = preview_window.prev_screen(self)
         else:
-            self.prev_win=preview_window.prev_screen(self)
+            self.prev_win = preview_window.prev_screen(self)
 
     def open_pub(self):
         if self.but_scan['relief'] == 'sunken':
             if self.but_enable_scan['relief'] == 'sunken':
                 if self.strvar_delay.get() != '':
-                    delay=float(self.strvar_delay.get())
+                    delay = float(self.strvar_delay.get())
                 else:
-                    delay=1
-                filelist=self.load_filelist()
-                var=tk.IntVar()
+                    delay = 1
+                filelist = self.load_filelist()
+                var = tk.IntVar()
                 for filepath in filelist:
+                    if self.var_stop_scan.get():
+                        self.var_stop_scan.set(0)
+                        return
                     root.after(int(delay*1000), var.set, 1)
                     self.load(filepath)
-                    self.pub_win=publish_window.pub_screen(
-                        self, self.ent_scr.get())
+                    if self.pub_win is not None:
+                        self.pub_win.update_img(self.get_phase())
+                    else:
+                        self.pub_win = publish_window.pub_screen(
+                            self, self.ent_scr.get())
                     root.wait_variable(var)
             else:
-                self.pub_win=publish_window.pub_screen(self,
-                                                         self.ent_scr.get())
+                if self.pub_win is not None:
+                    self.pub_win.update_img(self.get_phase())
+                else:
+                    self.pub_win = publish_window.pub_screen(
+                        self, self.ent_scr.get())
         else:
-            self.pub_win=publish_window.pub_screen(self,
-                                                     self.ent_scr.get())
+            if self.pub_win is not None:
+                self.pub_win.update_img(self.get_phase())
+            else:
+                self.pub_win = publish_window.pub_screen(self,
+                                                         self.ent_scr.get())
 
+    def pub_win_closed(self):
+        self.pub_win = None
 
     def setup_box(self, frm_):
-        frm_box=tk.LabelFrame(frm_, text='Phases enabled')
+        frm_box = tk.LabelFrame(frm_, text='Phases enabled')
         frm_box.grid(column=0)
-        self.types=phase_settings.types()  # reads in  different phase types
-        self.vars=[]  # init a list holding the variables from the boxes
-        self.phase_refs=[]  # init a list to hold the references to types
-        self.active_phases=[]
-        self.commands=[self.start_stop_0, self.start_stop_1,
+        self.types = phase_settings.types()  # reads in  different phase types
+        self.vars = []  # init a list holding the variables from the boxes
+        self.phase_refs = []  # init a list to hold the references to types
+        self.active_phases = []
+        self.commands = [self.start_stop_0, self.start_stop_1,
                          self.start_stop_2, self.start_stop_3,
                          self.start_stop_4, self.start_stop_5,
                          self.start_stop_6]
         for ind, typ in enumerate(self.types):
-            self.var_=(tk.IntVar())
+            self.var_ = (tk.IntVar())
             self.vars.append(self.var_)
             self.phase_refs.append(0)  # just filling it with 0 to start with
-            self.box_=tk.Checkbutton(frm_box, text=typ,
+            self.box_ = tk.Checkbutton(frm_box, text=typ,
                                        variable=self.vars[ind],
                                        onvalue=1, offvalue=0,
                                        command=self.commands[ind])
@@ -159,52 +177,52 @@ class main_screen(object):
 
     def start_stop_t(self, ind):
         if self.vars[ind].get() == 1:
-            self.phase_refs[ind]=phase_settings.new_type(self.frm_mid,
+            self.phase_refs[ind] = phase_settings.new_type(self.frm_mid,
                                                            self.types[ind])
             self.active_phases.append(self.phase_refs[ind])
         else:
             if self.phase_refs[ind] != 0:
                 self.phase_refs[ind].close_()
                 self.active_phases.remove(self.phase_refs[ind])
-            self.phase_refs[ind]=0
+            self.phase_refs[ind] = 0
 
 #   gets the phase from the active phase types. 0-2pi is 0-254
     def get_phase(self):
-        phase=np.zeros([600, 792])
+        phase = np.zeros([600, 792])
         for phase_types in self.active_phases:
             phase += phase_types.phase()
         return phase
 
     def save(self, filepath=None):
         """Save the current settings as a new file."""
-        if filepath == '':
-            filepath=asksaveasfilename(
+        if filepath is None:
+            filepath = asksaveasfilename(
                 defaultextension='txt',
                 filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')]
             )
             if not filepath:
                 return
-        dict={}
+        dict = {}
         with open(filepath, 'w') as f:
             for phase in self.active_phases:
-                dict[phase.name_()]=phase.save_()
+                dict[phase.name_()] = phase.save_()
             f.write(json.dumps(dict))
 
     def load(self, filepath=None):
-        if filepath == '':
-            filepath=askopenfilename(
+        if filepath is None:
+            filepath = askopenfilename(
                 filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')]
             )
             if not filepath:
                 return
         with open(filepath, 'r') as f:
-            dics=json.loads(f.read())
+            dics = json.loads(f.read())
         for num, var in enumerate(self.vars):  # resetting everything
             var.set(0)
             self.commands[num]()
         for key in dics.keys():
             try:
-                ind=self.types.index(key)
+                ind = self.types.index(key)
                 self.vars[ind].set(1)
                 self.commands[ind]()
                 self.phase_refs[ind].load_(dics[key])
@@ -217,45 +235,48 @@ class main_screen(object):
             self.but_scan.config(relief="raised")
         else:
             self.but_scan.config(relief="sunken")
-            self.so_frm=tk.LabelFrame(self.frm_side, text='Scan options')
+            self.so_frm = tk.LabelFrame(self.frm_side, text='Scan options')
             self.so_frm.grid(row=0, sticky='nsew')
 
             # creating frames
-            frm_scpar=tk.Frame(self.so_frm)
-            frm_file=tk.Frame(self.so_frm)
-            frm_load=tk.Frame(self.so_frm)
+            frm_scpar = tk.Frame(self.so_frm)
+            frm_file = tk.Frame(self.so_frm)
+            frm_load = tk.Frame(self.so_frm)
+            frm_but = tk.Frame(self.so_frm)
 
             # creating labels
-            lbl_scpar=tk.Label(frm_scpar, text='Scan parameter')
-            lbl_val=tk.Label(frm_scpar, text='Value (strt:stop:num)')
-            lbl_actf=tk.Label(frm_file, text='Active file:')
-            self.lbl_file=tk.Label(frm_file, text='')
-            lbl_delay=tk.Label(
+            lbl_scpar = tk.Label(frm_scpar, text='Scan parameter')
+            lbl_val = tk.Label(frm_scpar, text='Value (strt:stop:num)')
+            lbl_actf = tk.Label(frm_file, text='Active file:')
+            self.lbl_file = tk.Label(frm_file, text='')
+            lbl_delay = tk.Label(
                 frm_load, text='Delay between each phase [s]:')
 
             # creating entries
-            self.cbx_scpar=ttk.Combobox(
+            self.cbx_scpar = ttk.Combobox(
                 frm_scpar, values=['Select'], postcommand=self.scan_params)
             self.cbx_scpar.current(0)
-            vcmd=(self.frm_side.register(self.callback))
-            self.strvar_val=tk.StringVar()
-            ent_val=tk.Entry(frm_scpar,  width=10,  validate='all',
+            vcmd = (self.frm_side.register(self.callback))
+            self.strvar_val = tk.StringVar()
+            ent_val = tk.Entry(frm_scpar,  width=10,  validate='all',
                                validatecommand=(vcmd, '%d', '%P', '%S'),
                                textvariable=self.strvar_val)
-            self.strvar_delay=tk.StringVar()
-            ent_delay=tk.Entry(frm_load, width=5, validate='all',
+            self.strvar_delay = tk.StringVar()
+            ent_delay = tk.Entry(frm_load, width=5, validate='all',
                                  validatecommand=(vcmd, '%d', '%P', '%S'),
                                  textvariable=self.strvar_delay)
 
             # creating buttons
-            self.but_crt=tk.Button(
+            self.but_crt = tk.Button(
                 self.so_frm, text='Create loading file',
                 command=self.create_loadingfile)
-            but_openload=tk.Button(
+            but_openload = tk.Button(
                 self.so_frm, text='Open existing loading file',
                 command=self.open_loadingfile)
-            self.but_enable_scan=tk.Button(
-                self.so_frm, text='Enable scan', command=self.enable_scan)
+            self.but_enable_scan = tk.Button(
+                frm_but, text='Enable scan', command=self.enable_scan)
+            but_stop_scan = tk.Button(
+                frm_but, text='Stop scan', command=self.stop_scan)
 
             # setup
             frm_scpar.grid(row=0, sticky='nsew')
@@ -263,7 +284,10 @@ class main_screen(object):
             but_openload.grid(row=2, sticky='ew')
             frm_file.grid(row=3, sticky='w')
             frm_load.grid(row=4, sticky='nsew')
-            self.but_enable_scan.grid(row=5)
+            frm_but.grid(row=5)
+
+            self.but_enable_scan.grid(row=0, column=0, padx=5, pady=5)
+            but_stop_scan.grid(row=0, column=1, padx=5, pady=5)
 
             lbl_scpar.grid(row=0, column=0, sticky='e')
             lbl_val.grid(row=1, column=0, sticky='e')
@@ -291,25 +315,25 @@ class main_screen(object):
             return True
 
     def scan_params(self):
-        scparams=[]
+        scparams = []
         for phase in self.active_phases:
-            phparam=phase.save_()
+            phparam = phase.save_()
             for param in phparam.keys():
                 scparams.append(phase.name_() + ':' + param)
-        self.cbx_scpar['values']=scparams
+        self.cbx_scpar['values'] = scparams
         return
 
     def create_loadingfile(self):
         if self.strvar_val.get() != '':
-            strval=self.strvar_val.get()
-            listval=strval.split(':', 3)
+            strval = self.strvar_val.get()
+            listval = strval.split(':', 3)
             try:
-                strt=float(listval[0])
-                stop=float(listval[1])
-                num=int(listval[2])
-                val_range=np.linspace(strt, stop, num)
+                strt = float(listval[0])
+                stop = float(listval[1])
+                num = int(listval[2])
+                val_range = np.linspace(strt, stop, num)
             except (ValueError, IndexError) as err:
-                self.but_crt['text']=f'Create loading file : {err}'
+                self.but_crt['text'] = f'Create loading file : {err}'
                 return
 
         else:
@@ -317,67 +341,72 @@ class main_screen(object):
             return
         print(f'{strt}_{stop}_{num}')
 
-        cwd=os.getcwd()
+        cwd = os.getcwd()
         print('current cwd is {}'.format(cwd))
-        dirstr='\\SLM_phase_scan_files'
+        dirstr = '\\SLM_phase_scan_files'
         if not os.path.exists(cwd + dirstr):
             os.mkdir(cwd + dirstr)
         # create folder
-        scparam=self.cbx_scpar.get().split(':')
-        folder_str='\\{}_{}_{}_{}_{}'.format(
+        scparam = self.cbx_scpar.get().split(':')
+        folder_str = '\\{}_{}_{}_{}_{}'.format(
             scparam[0], scparam[1], strt, stop, num)
-        cwd=cwd + dirstr + folder_str
+        cwd = cwd + dirstr + folder_str
         if not os.path.exists(cwd):
             os.mkdir(cwd)
 
         # create file for filepaths
-        ind=self.types.index(scparam[0])
-        param_dic=self.phase_refs[ind].save_()
+        ind = self.types.index(scparam[0])
+        param_dic = self.phase_refs[ind].save_()
         with open(cwd + '\\' + 'filepaths.txt', 'w') as logfile:
             for val in val_range:
-                param_dic[scparam[1]]=val
+                param_dic[scparam[1]] = val
                 self.phase_refs[ind].load_(param_dic)
-                filepath=f'{cwd}\\{val}.txt'
+                filepath = f'{cwd}\\{val}.txt'
                 print(filepath)
                 self.save(filepath)
                 logfile.write(filepath + '\n')
-        self.lbl_file['text']=cwd + '\\' + 'filepaths.txt'
+        self.lbl_file['text'] = cwd + '\\' + 'filepaths.txt'
 
-        self.but_crt['text']='Create loading file : OK'
+        self.but_crt['text'] = 'Create loading file : OK'
         return
 
     def open_loadingfile(self):
-        filepath=askopenfilename(
+        filepath = askopenfilename(
             filetypes=[('Text Files', '*.txt'), ('All Files', '*.*')]
         )
         if not filepath:
             return
-        self.lbl_file['text']=f'{filepath}'
+        self.lbl_file['text'] = f'{filepath}'
         return
 
     def enable_scan(self):
+        self.var_stop_scan = tk.IntVar(value=0)
         if self.but_enable_scan['relief'] == 'sunken':
-            self.but_enable_scan['relief']='raised'
-            self.but_enable_scan['text']='Enable scan'
+            self.but_enable_scan['relief'] = 'raised'
+            self.but_enable_scan['text'] = 'Enable scan'
         else:
-            self.but_enable_scan['relief']='sunken'
-            self.but_enable_scan['text']='Scan enabled'
+            self.but_enable_scan['relief'] = 'sunken'
+            self.but_enable_scan['text'] = 'Scan enabled'
         return
 
     def load_filelist(self):
-        filelistpath=self.lbl_file['text']
+        filelistpath = self.lbl_file['text']
         with open(filelistpath, 'r') as f:
-            text=f.read()
-            stringlist=text.split('\n')
+            text = f.read()
+            stringlist = text.split('\n')
             return stringlist[0:-1]
+
+    def stop_scan(self):
+        self.var_stop_scan.set(1)
+        return
 
     def exit_prog(self):
         self.main_win.destroy()
 
 
-root=tk.Tk()
+root = tk.Tk()
 
-main=main_screen(root)
+main = main_screen(root)
 
 
 root.mainloop()

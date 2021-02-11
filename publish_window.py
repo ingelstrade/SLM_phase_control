@@ -8,6 +8,7 @@ class pub_screen(object):
     """"""
 
     def __init__(self, parent, position):
+        self.parent = parent
         self.win = tk.Toplevel()
         try:
             self.win.geometry('792x600' + position)
@@ -22,9 +23,18 @@ class pub_screen(object):
         img = Image.fromarray(np.uint8(phase))
         img.save('./phase.bmp')
         im = ImageTk.PhotoImage(img)
-        lbl_img = tk.Label(self.win, image=im)
-        lbl_img.image = im
-        lbl_img.pack(fill='both', side=tk.TOP, expand=1)
+        self.lbl_img = tk.Label(self.win, image=im)
+        self.lbl_img.image = im
+        # self.lbl_img.grid()
+        self.lbl_img.pack(fill='both', side=tk.TOP, expand=1)
+
+    def update_img(self, phase):
+        img = Image.fromarray(np.uint8(phase))
+        img.save('./phase.bmp')
+        im = ImageTk.PhotoImage(img)
+        self.lbl_img['image'] = im
+        self.lbl_img.image = im
 
     def on_close(self):
         self.win.destroy()
+        self.parent.pub_win_closed()

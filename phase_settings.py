@@ -8,7 +8,7 @@ print('types in')
 
 
 def types():
-    types = ['Background', 'Flat', 'Redirection', 'Binary', 'Lens',
+    types = ['Background', 'Flat', 'Tilt', 'Binary', 'Lens',
              'Multibeam']
     return types
 
@@ -16,8 +16,8 @@ def types():
 def new_type(frm_mid, typ):
     if typ == 'Flat':
         return type_flat(frm_mid)
-    elif typ == 'Redirection':
-        return type_dir(frm_mid)
+    elif typ == 'Tilt':
+        return type_tilt(frm_mid)
     elif typ == 'Binary':
         return type_binary(frm_mid)
     elif typ == 'Background':
@@ -132,13 +132,13 @@ class type_flat(object):
         self.frm_.destroy()
 
 
-class type_dir(object):
+class type_tilt(object):
     """shows the settings for redirection"""
 
     def __init__(self, parent):
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=2, column=0, sticky='nsew')
-        lbl_frm = tk.LabelFrame(self.frm_, text='Redirection')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Tilt')
         lbl_frm.grid(row=0, column=0, sticky='ew', padx=5, pady=10)
 
         # Creating objects
@@ -209,7 +209,7 @@ class type_dir(object):
         self.strvar_ydir.set(dict['ent_ydir'])
 
     def name_(self):
-        return 'Redirection'
+        return 'Tilt'
 
     def close_(self):
         self.frm_.destroy()
