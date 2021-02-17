@@ -27,6 +27,8 @@ class pub_screen(object):
         self.lbl_img.image = im
         # self.lbl_img.grid()
         self.lbl_img.pack(fill='both', side=tk.TOP, expand=1)
+        with open('./new_phase.txt', 'w') as f:
+            f.write('new')
 
     def update_img(self, phase):
         img = Image.fromarray(np.uint8(phase))
@@ -34,6 +36,8 @@ class pub_screen(object):
         im = ImageTk.PhotoImage(img)
         self.lbl_img['image'] = im
         self.lbl_img.image = im
+        with open('./new_phase.txt', 'w') as f:
+            f.write('new')
 
     def on_close(self):
         self.win.destroy()
