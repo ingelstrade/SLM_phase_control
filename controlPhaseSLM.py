@@ -22,6 +22,7 @@ class main_screen(object):
         self.main_win.columnconfigure(0, minsize=250, weight=1)
         self.main_win.rowconfigure(2, minsize=100, weight=1)
         self.pub_win = None
+        self.prev_win = None
 
         # creating frames
         frm_top = tk.Frame(self.main_win)
@@ -87,12 +88,24 @@ class main_screen(object):
                         return
                     root.after(int(delay*1000), var.set, 1)
                     self.load(filepath)
-                    self.prev_win = preview_window.prev_screen(self)
+                    if self.prev_win is not None:
+                        self.prev_win.update_plots()
+                    else:
+                        self.prev_win = preview_window.prev_screen(self)
                     root.wait_variable(var)
             else:
-                self.prev_win = preview_window.prev_screen(self)
+                if self.prev_win is not None:
+                    self.prev_win.update_plots()
+                else:
+                    self.prev_win = preview_window.prev_screen(self)
         else:
-            self.prev_win = preview_window.prev_screen(self)
+            if self.prev_win is not None:
+                self.prev_win.update_plots()
+            else:
+                self.prev_win = preview_window.prev_screen(self)
+
+    def prev_win_closed(self):
+        self.prev_win = None
 
     def open_pub(self):
         if self.but_scan['relief'] == 'sunken':
@@ -127,6 +140,7 @@ class main_screen(object):
             else:
                 self.pub_win = publish_window.pub_screen(self,
                                                          self.ent_scr.get())
+        self.open_prev()
 
     def pub_win_closed(self):
         self.pub_win = None
@@ -153,7 +167,7 @@ class main_screen(object):
             self.box_.grid(row=ind, sticky='w')
 
 # It is a bit not so nice, but box commands cant send args. currently able to
-# run 5 different phase types
+# run 7 different phase types
     def start_stop_0(self):
         self.start_stop_t(0)
 
@@ -361,7 +375,7 @@ class main_screen(object):
             for val in val_range:
                 param_dic[scparam[1]] = val
                 self.phase_refs[ind].load_(param_dic)
-                filepath = f'{cwd}\\{val}.txt'
+                filepath = f'{cwd}\\{val:.3f}.txt'
                 print(filepath)
                 self.save(filepath)
                 logfile.write(filepath + '\n')

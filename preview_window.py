@@ -10,13 +10,15 @@ class prev_screen(object):
     """"""
 
     def __init__(self, parent):
+        self.parent = parent
         self.win = tk.Toplevel()
         self.win.geometry('600x500')
         self.win.title('SLM Phase Control - Preview')
         def handler(): return self.on_close_prev()
         btn_close = tk.Button(self.win, text='Close', command=handler)
-        btn_close.pack(side=tk.BOTTOM)
+        btn_close.grid(row=1)
 
+    def update_plots(self):
         x = np.linspace(-40, 40, num=792)
         y = np.linspace(-30, 30, num=600)
         [X, Y] = np.meshgrid(x, y)
@@ -29,7 +31,7 @@ class prev_screen(object):
         input_intensity = A * np.exp(-res)
         input_intensity[np.sqrt(X**2+Y**2) < 4] = 0
 
-        input_phase = parent.get_phase()/254*2*3.141592653589793238462643383279
+        input_phase = self.parent.get_phase()/254*2*3.1415926535897932384626433
 
         tmp = abs(input_intensity)*np.exp(1j*input_phase)
 
@@ -51,7 +53,8 @@ class prev_screen(object):
         ax1[1, 1].axis([360, 440, 270, 330])
 
         img1 = FigureCanvasTkAgg(fig1, self.win)
-        img1.get_tk_widget().pack(side=tk.LEFT, fill=tk.BOTH)
+        img1.get_tk_widget().grid(row=0, sticky='nsew')
 
     def on_close_prev(self):
         self.win.destroy()
+        self.parent.prev_win_closed()
