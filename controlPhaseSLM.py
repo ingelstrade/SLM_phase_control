@@ -345,7 +345,7 @@ class main_screen(object):
                 strt = float(listval[0])
                 stop = float(listval[1])
                 num = int(listval[2])
-                val_range = np.linspace(strt, stop, num)
+                val_range = np.around(np.linspace(strt, stop, num), decimals=3)
             except (ValueError, IndexError) as err:
                 self.but_crt['text'] = f'Create loading file : {err}'
                 return
