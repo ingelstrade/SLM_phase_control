@@ -122,11 +122,19 @@ class main_screen(object):
                         return
                     root.after(int(delay*1000), var.set, 1)
                     self.load(filepath)
+
+                    # keeps to one window and updates for each filepath
                     if self.pub_win is not None:
                         self.pub_win.update_img(self.get_phase())
                     else:
                         self.pub_win = publish_window.pub_screen(
                             self, self.ent_scr.get())
+
+                    # updates the prev_win as well
+                    if self.prev_win is not None:
+                        self.prev_win.update_plots()
+                    else:
+                        self.prev_win = preview_window.prev_screen(self)
                     root.wait_variable(var)
             else:
                 if self.pub_win is not None:
@@ -134,13 +142,20 @@ class main_screen(object):
                 else:
                     self.pub_win = publish_window.pub_screen(
                         self, self.ent_scr.get())
+                if self.prev_win is not None:
+                    self.prev_win.update_plots()
+                else:
+                    self.prev_win = preview_window.prev_screen(self)
         else:
             if self.pub_win is not None:
                 self.pub_win.update_img(self.get_phase())
             else:
                 self.pub_win = publish_window.pub_screen(self,
                                                          self.ent_scr.get())
-        self.open_prev()
+            if self.prev_win is not None:
+                self.prev_win.update_plots()
+            else:
+                self.prev_win = preview_window.prev_screen(self)
 
     def pub_win_closed(self):
         self.pub_win = None

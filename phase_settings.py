@@ -546,7 +546,8 @@ class type_multibeams_cb(object):
         else:
             yis = 0
         intensities = np.ones(n**2)
-        totnum = np.ceil(600*792/(n**2))  # nbr of pixels for each phase
+        totnum = np.ceil((600*(792+n)/(n**2)))  # nbr of pixels for each phase
+        #          plus n in second dimension to account for noneven placement
         phase_nbr = np.outer(np.arange(n**2), np.ones([int(totnum)]))
 
         # modifying linear intensities
@@ -609,8 +610,11 @@ class type_multibeams_cb(object):
         for x in xrange:
             for y in yrange:
                 ind_phase = (x % n)*n + (y % n)  # x*n^1 + y*n^0 but x,y mod n
-                tot_phase[y, x] = phases[
-                    y, x, int(phase_nbr[ind_phase, int(col[ind_phase])])]
+                try:
+                    tot_phase[y, x] = phases[
+                        y, x, int(phase_nbr[ind_phase, int(col[ind_phase])])]
+                except IndexError:
+                    print(f'{y} {x} {ind_phase}')
                 col[ind_phase] += 1
 
         return tot_phase
@@ -619,13 +623,13 @@ class type_multibeams_cb(object):
         if xdir != '' and float(xdir) != 0:
             phx = np.outer(
                 np.ones([600, 1]),
-                np.arange(0, float(xdir)*792, float(xdir))) - float(xdir)*792/2
+                np.linspace(0, float(xdir)*791, num=792)) - float(xdir)*792/2
         else:
             phx = np.zeros([600, 792])
 
         if ydir != '' and float(ydir) != 0:
             phy = np.outer(
-                np.arange(0, float(ydir)*600, float(ydir)),
+                np.linspace(0, float(ydir)*599, num=600),
                 np.ones([1, 792])) - float(ydir)*600/2
         else:
             phy = np.zeros([600, 792])
@@ -636,11 +640,11 @@ class type_multibeams_cb(object):
     def save_(self):
         dict = {'n': self.ent_n.get(),
                 'hpt': self.ent_hpt.get(),
-                'hps': self.ent_hps.get(),
+                'rad': self.ent_rad.get(),
                 'hit': self.ent_hit.get(),
                 'his': self.ent_his.get(),
                 'vpt': self.ent_vpt.get(),
-                'vps': self.ent_vps.get(),
+                'amp': self.ent_amp.get(),
                 'vit': self.ent_vit.get(),
                 'vis': self.ent_vis.get()}
         return dict
@@ -648,20 +652,20 @@ class type_multibeams_cb(object):
     def load_(self, dict):
         self.ent_n.delete(0, tk.END)
         self.ent_hpt.delete(0, tk.END)
-        self.ent_hps.delete(0, tk.END)
+        self.ent_rad.delete(0, tk.END)
         self.ent_hit.delete(0, tk.END)
         self.ent_his.delete(0, tk.END)
         self.ent_vpt.delete(0, tk.END)
-        self.ent_vps.delete(0, tk.END)
+        self.ent_amp.delete(0, tk.END)
         self.ent_vit.delete(0, tk.END)
         self.ent_vis.delete(0, tk.END)
         self.ent_n.insert(0, dict['n'])
         self.ent_hpt.insert(0, dict['hpt'])
-        self.ent_hps.insert(0, dict['hps'])
+        self.ent_rad.insert(0, dict['rad'])
         self.ent_hit.insert(0, dict['hit'])
         self.ent_his.insert(0, dict['his'])
         self.ent_vpt.insert(0, dict['vpt'])
-        self.ent_vps.insert(0, dict['vps'])
+        self.ent_amp.insert(0, dict['amp'])
         self.ent_vit.insert(0, dict['vit'])
         self.ent_vis.insert(0, dict['vis'])
 
