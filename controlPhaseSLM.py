@@ -73,6 +73,16 @@ class main_screen(object):
         but_pub.grid(row=0, column=1, pady=5, ipadx=5)
         but_exit.grid(row=0, column=2, padx=10, pady=5, ipadx=5)
 
+        # binding keys
+        def lefthandler(event): return self.left_arrow()
+        self.main_win.bind('a', lefthandler)
+        def righthandler(event): return self.right_arrow()
+        self.main_win.bind('d', righthandler)
+        def uphandler(event): return self.up_arrow()
+        self.main_win.bind('w', uphandler)
+        def downhandler(event): return self.down_arrow()
+        self.main_win.bind('s', downhandler)
+
     def open_prev(self):
         if self.but_scan['relief'] == 'sunken':
             if self.but_enable_scan['relief'] == 'sunken':
@@ -428,6 +438,30 @@ class main_screen(object):
     def stop_scan(self):
         self.var_stop_scan.set(1)
         return
+
+    def left_arrow(self):
+        if self.vars[2].get() == 1:
+            self.phase_refs[2].left_()
+            self.open_pub()
+            self.main_win.after(500, self.main_win.focus_force)
+
+    def right_arrow(self):
+        if self.vars[2].get() == 1:
+            self.phase_refs[2].right_()
+            self.open_pub()
+            self.main_win.after(500, self.main_win.focus_force)
+
+    def up_arrow(self):
+        if self.vars[2].get() == 1:
+            self.phase_refs[2].up_()
+            self.open_pub()
+            self.main_win.after(500, self.main_win.focus_force)
+
+    def down_arrow(self):
+        if self.vars[2].get() == 1:
+            self.phase_refs[2].down_()
+            self.open_pub()
+            self.main_win.after(500, self.main_win.focus_force)
 
     def exit_prog(self):
         self.main_win.destroy()

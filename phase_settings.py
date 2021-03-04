@@ -145,6 +145,7 @@ class type_tilt(object):
         lbl_xdir = tk.Label(lbl_frm, text='Steepness along x-direction:')
         lbl_ydir = tk.Label(lbl_frm, text='Steepness along y-direction:')
         lbl_255 = tk.Label(lbl_frm, text='(255 corresponds to 2pi Rad)')
+        lbl_step = tk.Label(lbl_frm, text='(wasd) Step per click:')
         vcmd = (parent.register(self.callback))
         self.strvar_xdir = tk.StringVar()
         self.strvar_ydir = tk.StringVar()
@@ -156,6 +157,11 @@ class type_tilt(object):
             lbl_frm, width=11,  validate='all',
             validatecommand=(vcmd, '%d', '%P', '%S'),
             textvariable=self.strvar_ydir)
+        self.strvar_tstep = tk.StringVar()
+        self.ent_tstep = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_tstep)
 
         # Setting up
         lbl_xdir.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
@@ -163,6 +169,8 @@ class type_tilt(object):
         lbl_255.grid(row=2, sticky='ew', padx=(10, 10), pady=(0, 5))
         self.ent_xdir.grid(row=0, column=1, sticky='w', padx=(0, 10))
         self.ent_ydir.grid(row=1, column=1, sticky='w', padx=(0, 10))
+        lbl_step.grid(row=3, column=0, sticky='e', padx=(10, 0), pady=(0, 5))
+        self.ent_tstep.grid(row=3, column=1, sticky='w', padx=(0, 10))
 
     def callback(self, action, P, text):
         # action=1 -> insert
@@ -182,22 +190,38 @@ class type_tilt(object):
         xdir = self.ent_xdir.get()
         ydir = self.ent_ydir.get()
 
-        if xdir != '' and float(xdir) != 0:
-            phx = np.outer(
-                np.ones([600, 1]),
-                np.arange(0, float(xdir)*792, float(xdir))) - float(xdir)*792/2
-        else:
-            phx = np.zeros([600, 792])
-
         if ydir != '' and float(ydir) != 0:
             phy = np.outer(
-                np.arange(0, float(ydir)*600, float(ydir)),
-                np.ones([1, 792])) - float(ydir)*600/2
+                np.ones([600, 1]),
+                np.linspace(0, float(ydir)*791, num=792)) - float(ydir)*792/2
         else:
             phy = np.zeros([600, 792])
 
+        if xdir != '' and float(xdir) != 0:
+            phx = np.outer(
+                np.linspace(0, float(xdir)*599, num=600),
+                np.ones([1, 792])) - float(xdir)*600/2
+        else:
+            phx = np.zeros([600, 792])
+
         phase = phx + phy
         return phase
+
+    def left_(self):
+        tmp = float(self.strvar_xdir.get()) + float(self.strvar_tstep.get())
+        self.strvar_xdir.set(tmp)
+
+    def right_(self):
+        tmp = float(self.strvar_xdir.get()) - float(self.strvar_tstep.get())
+        self.strvar_xdir.set(tmp)
+
+    def up_(self):
+        tmp = float(self.strvar_ydir.get()) + float(self.strvar_tstep.get())
+        self.strvar_ydir.set(tmp)
+
+    def down_(self):
+        tmp = float(self.strvar_ydir.get()) - float(self.strvar_tstep.get())
+        self.strvar_ydir.set(tmp)
 
     def save_(self):
         dict = {'ent_xdir': self.ent_xdir.get(),

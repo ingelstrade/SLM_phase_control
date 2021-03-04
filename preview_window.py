@@ -17,6 +17,7 @@ class prev_screen(object):
         def handler(): return self.on_close_prev()
         btn_close = tk.Button(self.win, text='Close', command=handler)
         btn_close.grid(row=1)
+        self.update_plots()
 
     def update_plots(self):
         x = np.linspace(-40, 40, num=792)
