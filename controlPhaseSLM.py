@@ -5,7 +5,6 @@ import numpy as np
 from tkinter.filedialog import askopenfilename, asksaveasfilename
 import json
 import os
-import time
 import phase_settings
 import preview_window
 import publish_window
@@ -115,6 +114,7 @@ class main_screen(object):
                 self.prev_win = preview_window.prev_screen(self)
 
     def prev_win_closed(self):
+        print('prev closed')
         self.prev_win = None
 
     def open_pub(self):
@@ -470,6 +470,5 @@ class main_screen(object):
 root = tk.Tk()
 
 main = main_screen(root)
-
 
 root.mainloop()

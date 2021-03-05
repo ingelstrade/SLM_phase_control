@@ -1,7 +1,11 @@
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib import pyplot as plt
 import tkinter as tk
 import numpy as np
-from matplotlib import pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib
+matplotlib.use("TkAgg")
+
 
 print('preview_window in')
 
@@ -17,6 +21,14 @@ class prev_screen(object):
         def handler(): return self.on_close_prev()
         btn_close = tk.Button(self.win, text='Close', command=handler)
         btn_close.grid(row=1)
+        self.fig = Figure(figsize=(5, 4), dpi=100)
+        self.ax1 = self.fig.add_subplot(221)
+        self.ax2 = self.fig.add_subplot(222)
+        self.ax3 = self.fig.add_subplot(223)
+        self.ax4 = self.fig.add_subplot(224)
+        self.img1 = FigureCanvasTkAgg(self.fig, self.win)
+        self.tk_widget_fig = self.img1.get_tk_widget()
+        self.tk_widget_fig.grid(row=0, sticky='nsew')
         self.update_plots()
 
     def update_plots(self):
@@ -37,25 +49,34 @@ class prev_screen(object):
         tmp = abs(input_intensity)*np.exp(1j*input_phase)
 
         focus_int = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(tmp)))
+        self.ax1.clear()
 
-        fig1, ax1 = plt.subplots(nrows=2, ncols=2)
-        ax1[0, 0].imshow(input_intensity)
-        ax1[0, 0].set_title('Input int')
+        self.ax1.imshow(input_intensity)
+        self.ax1.set_title('Input int')
+        #
+        self.ax2.clear()
+        self.ax2.imshow(input_phase)
+        self.ax2.set_title('Input phase')
+        #
+        self.ax3.clear()
+        self.ax3.imshow(abs(focus_int))
+        self.ax3.set_ylabel('In Focus')
+        self.ax3.axis([360, 440, 270, 330])
+        #
+        self.ax4.clear()
+        self.ax4.imshow(np.angle(focus_int))
+        # # ax1[1, 1].set_title('Focus phase')
+        self.ax4.axis([360, 440, 270, 330])
 
-        ax1[0, 1].imshow(input_phase)
-        ax1[0, 1].set_title('Input phase')
+        # canvas = FigureCanvasTkAgg(self.fig, master=self.win)
+        # canvas.get_tk_widget().grid(row=0, sticky='nsew')
 
-        ax1[1, 0].imshow(abs(focus_int))
-        ax1[1, 0].set_ylabel('In Focus')
-        ax1[1, 0].axis([360, 440, 270, 330])
-
-        ax1[1, 1].imshow(np.angle(focus_int))
-        # ax1[1, 1].set_title('Focus phase')
-        ax1[1, 1].axis([360, 440, 270, 330])
-
-        img1 = FigureCanvasTkAgg(fig1, self.win)
-        img1.get_tk_widget().grid(row=0, sticky='nsew')
+        # self.img1 = FigureCanvasTkAgg(self.fig, self.win)
+        # self.tk_widget_fig = self.img1.get_tk_widget()
+        # self.tk_widget_fig.grid(row=0, sticky='nsew')
+        # del input_intensity, input_phase, tmp, focus_int
 
     def on_close_prev(self):
+        plt.close(self.fig)
         self.win.destroy()
         self.parent.prev_win_closed()

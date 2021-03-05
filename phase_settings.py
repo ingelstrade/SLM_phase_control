@@ -205,6 +205,8 @@ class type_tilt(object):
             phx = np.zeros([600, 792])
 
         phase = phx + phy
+        del phx
+        del phy
         return phase
 
     def left_(self):
@@ -306,7 +308,7 @@ class type_binary(object):
             cutpixel = int(round(792*area/100))
             tmp = np.ones([600, cutpixel])*phi
             phase_mat[:, 0:cutpixel] = tmp
-
+        del tmp
         return phase_mat
 
     def save_(self):
@@ -392,6 +394,7 @@ class type_lens(object):
         [X, Y] = np.meshgrid(x, y)
         R = np.sqrt(X**2+Y**2)  # radius on a 2d array
         Z = fac*radsign*(np.sqrt(rad**2+R**2)-rad)
+        del X, Y, R
         return Z
 
     def save_(self):
