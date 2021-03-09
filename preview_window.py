@@ -16,7 +16,6 @@ class prev_screen(object):
     def __init__(self, parent):
         self.parent = parent
         self.win = tk.Toplevel()
-        self.win.geometry('600x500')
         self.win.title('SLM Phase Control - Preview')
         def handler(): return self.on_close_prev()
         btn_close = tk.Button(self.win, text='Close', command=handler)
@@ -49,14 +48,15 @@ class prev_screen(object):
         tmp = abs(input_intensity)*np.exp(1j*input_phase)
 
         focus_int = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(tmp)))
-        self.ax1.clear()
 
+        self.ax1.clear()
         self.ax1.imshow(input_intensity)
-        self.ax1.set_title('Input int')
+        self.ax1.set_title('Intensity')
+        self.ax1.set_ylabel('Input')
         #
         self.ax2.clear()
         self.ax2.imshow(input_phase)
-        self.ax2.set_title('Input phase')
+        self.ax2.set_title('Phase')
         #
         self.ax3.clear()
         self.ax3.imshow(abs(focus_int))
@@ -65,16 +65,9 @@ class prev_screen(object):
         #
         self.ax4.clear()
         self.ax4.imshow(np.angle(focus_int))
-        # # ax1[1, 1].set_title('Focus phase')
         self.ax4.axis([360, 440, 270, 330])
 
-        # canvas = FigureCanvasTkAgg(self.fig, master=self.win)
-        # canvas.get_tk_widget().grid(row=0, sticky='nsew')
-
-        # self.img1 = FigureCanvasTkAgg(self.fig, self.win)
-        # self.tk_widget_fig = self.img1.get_tk_widget()
-        # self.tk_widget_fig.grid(row=0, sticky='nsew')
-        # del input_intensity, input_phase, tmp, focus_int
+        self.img1.draw()
 
     def on_close_prev(self):
         plt.close(self.fig)
