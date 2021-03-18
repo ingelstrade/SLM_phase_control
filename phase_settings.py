@@ -9,7 +9,7 @@ print('types in')
 
 def types():
     types = ['Background', 'Flat', 'Tilt', 'Binary', 'Lens',
-             'Multibeam']
+             'Multibeam', 'Vortex']
     return types
 
 
@@ -26,6 +26,8 @@ def new_type(frm_mid, typ):
         return type_lens(frm_mid)
     elif typ == 'Multibeam':
         return type_multibeams_cb(frm_mid)
+    elif typ == 'Vortex':
+        return type_vortex(frm_mid)
 
 
 class type_bg(object):
@@ -428,6 +430,7 @@ class type_multibeams_cb(object):
         frm_spr = tk.Frame(frm_sprrad)
         frm_rad = tk.Frame(frm_sprrad)
         frm_int = tk.Frame(lbl_frm)
+        frm_pxsiz = tk.Frame(lbl_frm)
 
         # creating labels
         lbl_n = tk.Label(frm_n, text='n^2; n=:')
@@ -440,6 +443,7 @@ class type_multibeams_cb(object):
         lbl_cph = tk.Label(frm_sprrad, text='Hyp.phase diff')
         lbl_rad = tk.Label(frm_rad, text='Radius:')
         lbl_amp = tk.Label(frm_rad, text='Amplitude:')
+        lbl_pxsiz = tk.Label(frm_pxsiz, text='pixel size:')
 
         # creating entries
         vcmd = (parent.register(self.callback))
@@ -461,11 +465,15 @@ class type_multibeams_cb(object):
                                 validatecommand=(vcmd, '%d', '%P', '%S'))
         self.ent_vis = tk.Entry(frm_int, width=5,  validate='all',
                                 validatecommand=(vcmd, '%d', '%P', '%S'))
+        self.ent_pxsiz = tk.Entry(frm_pxsiz, width=5,  validate='all',
+                                  validatecommand=(vcmd, '%d', '%P', '%S'))
 
         # setup
         frm_n.grid(row=0, sticky='nsew')
         frm_sprrad.grid(row=1, sticky='nsew')
         frm_int.grid(row=2, sticky='nsew')
+        frm_pxsiz.grid(row=3, sticky='nsew')
+
         frm_spr.grid(row=1, column=0, sticky='nsew')
         frm_rad.grid(row=1, column=1, sticky='ew')
 
@@ -493,6 +501,9 @@ class type_multibeams_cb(object):
         self.ent_his.grid(row=1, column=2, padx=(0, 5))
         self.ent_vit.grid(row=2, column=1, pady=(0, 5))
         self.ent_vis.grid(row=2, column=2, padx=(0, 5), pady=(0, 5))
+
+        lbl_pxsiz.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
+        self.ent_pxsiz.grid(row=0, column=1, sticky='w')
 
     def callback(self, action, P, text):
         # action=1 -> insert
@@ -630,13 +641,19 @@ class type_multibeams_cb(object):
         rng.shuffle(phase_nbr, axis=1)  # mixing so the changed are not tgether
         col = np.zeros(n**2)  # keeping track of which column in phase_nbr
 
+        if self.ent_pxsiz.get() != '':
+            pxsiz = int(self.ent_pxsiz.get())
+        else:
+            pxsiz = 1
         # creating the total phase by adding the different ones
         xrange = np.arange(0, 792, 1)
         yrange = np.arange(0, 600, 1)
         tot_phase = np.zeros([600, 792])
         for x in xrange:
             for y in yrange:
-                ind_phase = (x % n)*n + (y % n)  # x*n^1 + y*n^0 but x,y mod n
+                ind_phase = int(
+                    (np.floor(x/pxsiz) % n)*n + (np.floor(y/pxsiz) % n))
+                # x*n^1 + y*n^0 but x,y mod n
                 try:
                     tot_phase[y, x] = phases[
                         y, x, int(phase_nbr[ind_phase, int(col[ind_phase])])]
@@ -698,6 +715,66 @@ class type_multibeams_cb(object):
 
     def name_(self):
         return 'Multibeam'
+
+    def close_(self):
+        self.frm_.destroy()
+
+
+class type_vortex(object):
+    """shows vortex settings for phase"""
+
+    def __init__(self, parent):
+        self.frm_ = tk.Frame(parent)
+        self.frm_.grid(row=6, column=0, sticky='nsew')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Vortex')
+        lbl_frm.grid(row=0, column=0, sticky='ew')
+
+        lbl_vor = tk.Label(lbl_frm, text='Vortex order:')
+        vcmd = (parent.register(self.callback))
+        self.strvar_vor = tk.StringVar()
+        self.ent_vor = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_vor)
+        lbl_vor.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
+        self.ent_vor.grid(row=0, column=1, sticky='w', padx=(0, 10))
+
+    def callback(self, action, P, text):
+        # action=1 -> insert
+        if(action == '1'):
+            if text in '0123456789.-+':
+                try:
+                    float(P)
+                    return True
+                except ValueError:
+                    return False
+            else:
+                return False
+        else:
+            return True
+
+    def phase(self):
+        if self.ent_vor.get() != '':
+            vor = float(self.ent_vor.get())
+        else:
+            vor = 0
+        x = np.linspace(-7.92, 7.92, num=792)  # chipsize 15.84*12mm
+        y = np.linspace(-6, 6, num=600)
+        [X, Y] = np.meshgrid(x, y)
+        theta = np.arctan(Y/X)
+        theta[X < 0] += np.pi
+        phase = theta*255/(2*np.pi)*vor
+        return phase
+
+    def save_(self):
+        dict = {'vort_ord': self.ent_vor.get()}
+        return dict
+
+    def load_(self, dict):
+        self.strvar_vor.set(dict['vort_ord'])
+
+    def name_(self):
+        return 'Vortex'
 
     def close_(self):
         self.frm_.destroy()
