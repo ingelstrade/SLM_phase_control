@@ -3,6 +3,7 @@ from tkinter import ttk
 import numpy as np
 from tkinter.filedialog import askopenfilename
 import matplotlib.image as mpimg
+import time
 
 print('types in')
 
@@ -335,7 +336,7 @@ class type_binary(object):
 
 
 class type_lens(object):
-    """shows multibeam checkerboard settings for phase"""
+    """shows lens settings for phase"""
 
     def __init__(self, parent):
         self.frm_ = tk.Frame(parent)
@@ -447,26 +448,46 @@ class type_multibeams_cb(object):
 
         # creating entries
         vcmd = (parent.register(self.callback))
+        self.strvar_n = tk.StringVar()
         self.ent_n = tk.Entry(frm_n, width=5,  validate='all',
-                              validatecommand=(vcmd, '%d', '%P', '%S'))
+                              validatecommand=(vcmd, '%d', '%P', '%S'),
+                              textvariable=self.strvar_n)
+        self.strvar_hpt = tk.StringVar()
         self.ent_hpt = tk.Entry(frm_spr, width=5,  validate='all',
-                                validatecommand=(vcmd, '%d', '%P', '%S'))
+                                validatecommand=(vcmd, '%d', '%P', '%S'),
+                                textvariable=self.strvar_hpt)
+        self.strvar_vpt = tk.StringVar()
         self.ent_vpt = tk.Entry(frm_spr, width=5,  validate='all',
-                                validatecommand=(vcmd, '%d', '%P', '%S'))
+                                validatecommand=(vcmd, '%d', '%P', '%S'),
+                                textvariable=self.strvar_vpt)
+        self.strvar_rad = tk.StringVar()
         self.ent_rad = tk.Entry(frm_rad, width=5,  validate='all',
-                                validatecommand=(vcmd, '%d', '%P', '%S'))
+                                validatecommand=(vcmd, '%d', '%P', '%S'),
+                                textvariable=self.strvar_rad)
+        self.strvar_amp = tk.StringVar()
         self.ent_amp = tk.Entry(frm_rad, width=5,  validate='all',
-                                validatecommand=(vcmd, '%d', '%P', '%S'))
+                                validatecommand=(vcmd, '%d', '%P', '%S'),
+                                textvariable=self.strvar_amp)
+        self.strvar_hit = tk.StringVar()
         self.ent_hit = tk.Entry(frm_int, width=5,  validate='all',
-                                validatecommand=(vcmd, '%d', '%P', '%S'))
+                                validatecommand=(vcmd, '%d', '%P', '%S'),
+                                textvariable=self.strvar_hit)
+        self.strvar_vit = tk.StringVar()
         self.ent_vit = tk.Entry(frm_int, width=5,  validate='all',
-                                validatecommand=(vcmd, '%d', '%P', '%S'))
+                                validatecommand=(vcmd, '%d', '%P', '%S'),
+                                textvariable=self.strvar_vit)
+        self.strvar_his = tk.StringVar()
         self.ent_his = tk.Entry(frm_int, width=5,  validate='all',
-                                validatecommand=(vcmd, '%d', '%P', '%S'))
+                                validatecommand=(vcmd, '%d', '%P', '%S'),
+                                textvariable=self.strvar_his)
+        self.strvar_vis = tk.StringVar()
         self.ent_vis = tk.Entry(frm_int, width=5,  validate='all',
-                                validatecommand=(vcmd, '%d', '%P', '%S'))
+                                validatecommand=(vcmd, '%d', '%P', '%S'),
+                                textvariable=self.strvar_vis)
+        self.strvar_pxsiz = tk.StringVar()
         self.ent_pxsiz = tk.Entry(frm_pxsiz, width=5,  validate='all',
-                                  validatecommand=(vcmd, '%d', '%P', '%S'))
+                                  validatecommand=(vcmd, '%d', '%P', '%S'),
+                                  textvariable=self.strvar_pxsiz)
 
         # setup
         frm_n.grid(row=0, sticky='nsew')
@@ -649,18 +670,19 @@ class type_multibeams_cb(object):
         xrange = np.arange(0, 792, 1)
         yrange = np.arange(0, 600, 1)
         tot_phase = np.zeros([600, 792])
+        [X, Y] = np.meshgrid(xrange, yrange)
+        def f(x): return np.int(x)
+        f2 = np.vectorize(f)
+        ind_phase = f2(
+            (np.floor(X/pxsiz) % n)*n + (np.floor(Y/pxsiz) % n))
         for x in xrange:
             for y in yrange:
-                ind_phase = int(
-                    (np.floor(x/pxsiz) % n)*n + (np.floor(y/pxsiz) % n))
-                # x*n^1 + y*n^0 but x,y mod n
                 try:
                     tot_phase[y, x] = phases[
-                        y, x, int(phase_nbr[ind_phase, int(col[ind_phase])])]
+                        y, x, int(phase_nbr[ind_phase[y, x], int(col[ind_phase[y, x]])])]
                 except IndexError:
-                    print(f'{y} {x} {ind_phase}')
-                col[ind_phase] += 1
-
+                    pass
+                col[ind_phase[y, x]] += 1
         return tot_phase
 
     def phase_tilt(self, xdir, ydir):
@@ -690,28 +712,21 @@ class type_multibeams_cb(object):
                 'vpt': self.ent_vpt.get(),
                 'amp': self.ent_amp.get(),
                 'vit': self.ent_vit.get(),
-                'vis': self.ent_vis.get()}
+                'vis': self.ent_vis.get(),
+                'pxsiz': self.ent_pxsiz.get()}
         return dict
 
     def load_(self, dict):
-        self.ent_n.delete(0, tk.END)
-        self.ent_hpt.delete(0, tk.END)
-        self.ent_rad.delete(0, tk.END)
-        self.ent_hit.delete(0, tk.END)
-        self.ent_his.delete(0, tk.END)
-        self.ent_vpt.delete(0, tk.END)
-        self.ent_amp.delete(0, tk.END)
-        self.ent_vit.delete(0, tk.END)
-        self.ent_vis.delete(0, tk.END)
-        self.ent_n.insert(0, dict['n'])
-        self.ent_hpt.insert(0, dict['hpt'])
-        self.ent_rad.insert(0, dict['rad'])
-        self.ent_hit.insert(0, dict['hit'])
-        self.ent_his.insert(0, dict['his'])
-        self.ent_vpt.insert(0, dict['vpt'])
-        self.ent_amp.insert(0, dict['amp'])
-        self.ent_vit.insert(0, dict['vit'])
-        self.ent_vis.insert(0, dict['vis'])
+        self.strvar_n.set(dict['n'])
+        self.strvar_hpt.set(dict['hpt'])
+        self.strvar_rad.set(dict['rad'])
+        self.strvar_hit.set(dict['hit'])
+        self.strvar_his.set(dict['his'])
+        self.strvar_vpt.set(dict['vpt'])
+        self.strvar_amp.set(dict['amp'])
+        self.strvar_vit.set(dict['vit'])
+        self.strvar_vis.set(dict['vis'])
+        self.strvar_pxsiz.set(dict['pxsiz'])
 
     def name_(self):
         return 'Multibeam'

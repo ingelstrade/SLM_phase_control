@@ -31,7 +31,7 @@ class pub_screen(object):
             f.write('new')
 
     def update_img(self, phase):
-        img = Image.fromarray(np.uint8(phase))
+        img = Image.fromarray(np.uint8((phase % 256)/255*210))
         img.save('./phase.bmp')
         im = ImageTk.PhotoImage(img)
         self.lbl_img['image'] = im
