@@ -541,6 +541,7 @@ class type_multibeams_cb(object):
             return True
 
     def phase(self):
+        # tic = time.perf_counter()
         if self.ent_n.get() != '':
             n = int(self.ent_n.get())
         else:
@@ -564,7 +565,7 @@ class type_multibeams_cb(object):
             for ydir in ytilts:
                 phases[:, :, ind] = self.phase_tilt(xdir, ydir)
                 ind += 1
-
+        # tic2 = time.perf_counter()
         # getting the hyperbolical curve on the phases
         if self.ent_rad.get() != '':
             tmprad = float(self.ent_rad.get())
@@ -574,19 +575,20 @@ class type_multibeams_cb(object):
             amp = float(self.ent_amp.get())
         else:
             amp = 0
-        radsign = np.sign(tmprad)
-        rad = np.abs(tmprad)
-        x = tilts
-        y = tilts
-        [X, Y] = np.meshgrid(x, y)
-        R = np.sqrt(X**2+Y**2)
-        Z = amp*radsign*(np.sqrt(rad**2+R**2)-rad)
-        ind = 0
-        for row in Z:
-            for elem in row:
-                phases[:, :, ind] = elem + phases[:, :, ind]
-                ind += 1
-
+        if amp != 0 and tmprad != 0:
+            radsign = np.sign(tmprad)
+            rad = np.abs(tmprad)
+            x = tilts
+            y = tilts
+            [X, Y] = np.meshgrid(x, y)
+            R = np.sqrt(X**2+Y**2)
+            Z = amp*radsign*(np.sqrt(rad**2+R**2)-rad)
+            ind = 0
+            for row in Z:
+                for elem in row:
+                    phases[:, :, ind] = elem + phases[:, :, ind]
+                    ind += 1
+        # tic3 = time.perf_counter()
         # setting up for intensity control
         if self.ent_hit.get() != '':
             xit = float(self.ent_hit.get())
@@ -622,7 +624,7 @@ class type_multibeams_cb(object):
         for tmpx in xits:
             intensities[n*ii:n*(ii+1)] = (tmpx + yits + 1)
             ii += 1
-
+        # tic4 = time.perf_counter()
         # modifying square intensities
         spread = tilts
         xiss = -xis * (spread**2 - spread[0]**2)
@@ -631,7 +633,7 @@ class type_multibeams_cb(object):
         for tmpx in xiss:
             intensities[n*ii:n*(ii+1)] += (tmpx + yiss + 1)
             ii += 1
-
+        # tic5 = time.perf_counter()
         # creating the intensity arrays (which phase to have at which pixel)
         intensities[intensities < 0] = 0
         intensities = intensities/np.sum(intensities)*n**2  # normalize
@@ -661,7 +663,7 @@ class type_multibeams_cb(object):
         rng = np.random.default_rng()
         rng.shuffle(phase_nbr, axis=1)  # mixing so the changed are not tgether
         col = np.zeros(n**2)  # keeping track of which column in phase_nbr
-
+        # tic6 = time.perf_counter()
         if self.ent_pxsiz.get() != '':
             pxsiz = int(self.ent_pxsiz.get())
         else:
@@ -675,7 +677,7 @@ class type_multibeams_cb(object):
         f2 = np.vectorize(f)
         ind_phase = f2(
             (np.floor(X/pxsiz) % n)*n + (np.floor(Y/pxsiz) % n))
-        # tic = time.perf_counter()
+        # tic7 = time.perf_counter()
         iii = np.arange(0, n**2, 1)
         ind_phase2 = ind_phase.copy()
         for ii in iii:
@@ -691,6 +693,13 @@ class type_multibeams_cb(object):
             tot_phase[ind_phase2 == ii] = ii_phase[ind_phase2 == ii]
         # toc = time.perf_counter()
         # print(toc-tic)
+        # print(tic2-tic)
+        # print(tic3-tic2)
+        # print(tic4-tic3)
+        # print(tic5-tic4)
+        # print(tic6-tic5)
+        # print(tic7-tic6)
+
         return tot_phase
 
     def phase_tilt(self, xdir, ydir):
