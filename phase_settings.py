@@ -675,14 +675,22 @@ class type_multibeams_cb(object):
         f2 = np.vectorize(f)
         ind_phase = f2(
             (np.floor(X/pxsiz) % n)*n + (np.floor(Y/pxsiz) % n))
-        for x in xrange:
-            for y in yrange:
-                try:
-                    tot_phase[y, x] = phases[
-                        y, x, int(phase_nbr[ind_phase[y, x], int(col[ind_phase[y, x]])])]
-                except IndexError:
-                    pass
-                col[ind_phase[y, x]] += 1
+        # tic = time.perf_counter()
+        iii = np.arange(0, n**2, 1)
+        ind_phase2 = ind_phase.copy()
+        for ii in iii:
+            max_nbr = np.count_nonzero(ind_phase == ii)
+            if max_nbr <= phase_nbr[0, :].size:
+                ind_phase2[ind_phase == ii] = phase_nbr[ii, 0:max_nbr]
+            else:
+                extra = ii*np.ones([max_nbr-phase_nbr[0, :].size])
+                ind_phase2[ind_phase == ii] = np.append(phase_nbr[ii, :], extra)
+
+        for ii in iii:
+            ii_phase = phases[:, :, ii]
+            tot_phase[ind_phase2 == ii] = ii_phase[ind_phase2 == ii]
+        # toc = time.perf_counter()
+        # print(toc-tic)
         return tot_phase
 
     def phase_tilt(self, xdir, ydir):
