@@ -345,26 +345,18 @@ class type_lens(object):
         lbl_frm.grid(row=0, column=0, sticky='ew')
 
         # creating labels
-        lbl_rad = tk.Label(lbl_frm, text='Radius [mm]:')
-        lbl_fac = tk.Label(lbl_frm, text='Multiplication factor [Rad/mmglas]:')
+        lbl_ben = tk.Label(lbl_frm, text='Bending strength (1/f) [1/m]:')
 
         # creating entries
         vcmd = (parent.register(self.callback))
-        self.strvar_rad = tk.StringVar()
-        self.ent_rad = tk.Entry(lbl_frm, width=5,  validate='all',
+        self.strvar_ben = tk.StringVar()
+        self.ent_ben = tk.Entry(lbl_frm, width=5,  validate='all',
                                 validatecommand=(vcmd, '%d', '%P', '%S'),
-                                textvariable=self.strvar_rad)
-        self.strvar_fac = tk.StringVar()
-        self.ent_fac = tk.Entry(lbl_frm, width=5,  validate='all',
-                                validatecommand=(vcmd, '%d', '%P', '%S'),
-                                textvariable=self.strvar_fac)
-        self.strvar_fac.set('150000')
+                                textvariable=self.strvar_ben)
 
         # setup
-        lbl_rad.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_fac.grid(row=1, column=0, sticky='e', padx=(10, 0))
-        self.ent_rad.grid(row=0, column=1, sticky='w', padx=(0, 10))
-        self.ent_fac.grid(row=1, column=1, sticky='w', padx=(0, 10), pady=5)
+        lbl_ben.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
+        self.ent_ben.grid(row=0, column=1, sticky='w', padx=(0, 10))
 
     def callback(self, action, P, text):
         # action=1 -> insert
@@ -382,32 +374,29 @@ class type_lens(object):
 
     def phase(self):
         # getting the hyperbolical curve on the phases
-        if self.ent_rad.get() != '':
-            rad = float(self.ent_rad.get())
+        if self.ent_ben.get() != '':
+            ben = float(self.ent_ben.get())
         else:
-            rad = 1000000
-        if self.ent_fac.get() != '':
-            fac = float(self.ent_fac.get())
-        else:
-            fac = 0
-        radsign = np.sign(rad)
-        rad = np.abs(rad)
-        x = np.linspace(-7.92, 7.92, num=792)  # chipsize 15.84*12mm
-        y = np.linspace(-6, 6, num=600)
+            ben = 0
+
+        radsign = np.sign(ben)
+        rad = 2/np.abs(ben)  # R=2*f
+        x = np.linspace(-7.92e-3, 7.92e-3, num=792)  # chipsize 15.84*12mm
+        y = np.linspace(-6e-3, 6e-3, num=600)
         [X, Y] = np.meshgrid(x, y)
         R = np.sqrt(X**2+Y**2)  # radius on a 2d array
-        Z = fac*radsign*(np.sqrt(rad**2+R**2)-rad)
-        del X, Y, R
-        return Z
+        Z = radsign*(np.sqrt(rad**2+R**2)-rad)
+        print(Z[:, 396])
+        Z_phi = Z/(800e-9)*256  # translating meters to wavelengths and phase
+        del X, Y, R, Z
+        return Z_phi
 
     def save_(self):
-        dict = {'rad': self.ent_rad.get(),
-                'fac': self.ent_fac.get()}
+        dict = {'ben': self.ent_ben.get()}
         return dict
 
     def load_(self, dict):
-        self.strvar_rad.set(dict['rad'])
-        self.strvar_fac.set(dict['fac'])
+        self.strvar_ben.set(dict['ben'])
 
     def name_(self):
         return 'Lens'
