@@ -37,17 +37,18 @@ class prev_screen(object):
 
         x0 = 0  # center
         y0 = 0  # center
-        sigma = 5  # beam waist
+        sigma = 17  # beam waist
         A = 1  # peak of the beam
         res = ((X-x0)**2 + (Y-y0)**2)/(2*sigma**2)
         input_intensity = A * np.exp(-res)
-        input_intensity[np.sqrt(X**2+Y**2) < 4] = 0
+        input_intensity[np.sqrt(X**2+Y**2) < 12] = 0
 
         input_phase = self.parent.get_phase()/255*2*3.1415926535897932384626433
 
         tmp = abs(input_intensity)*np.exp(1j*input_phase)
+        paddedtmp = np.pad(tmp, 800)
 
-        focus_int = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(tmp)))
+        focus_int = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(paddedtmp)))
 
         self.ax1.clear()
         self.ax1.imshow(input_intensity)
@@ -58,14 +59,20 @@ class prev_screen(object):
         self.ax2.imshow(input_phase)
         self.ax2.set_title('Phase')
         #
+        fsiz = np.divide(focus_int.shape, 2)
         self.ax3.clear()
         self.ax3.imshow(abs(focus_int))
         self.ax3.set_ylabel('In Focus')
-        self.ax3.axis([360, 440, 270, 330])
+        self.ax3.axis([fsiz[1]-40, fsiz[1]+40, fsiz[0]-30, fsiz[0]+30])
         #
         self.ax4.clear()
-        self.ax4.imshow(np.angle(focus_int))
-        self.ax4.axis([360, 440, 270, 330])
+        strt = int(fsiz[1]-20)
+        stop = int(fsiz[1]+20)
+        print(strt)
+        print(stop)
+        self.ax4.plot(abs(focus_int[int(fsiz[0]), strt:stop]))
+        # self.ax4.imshow(np.angle(focus_int))
+        # self.ax4.axis([360, 440, 270, 330])
 
         self.img1.draw()
 

@@ -126,6 +126,7 @@ class main_screen(object):
                     delay = 1
                 filelist = self.load_filelist()
                 var = tk.IntVar()
+
                 for filepath in filelist:
                     if self.var_stop_scan.get():
                         self.var_stop_scan.set(0)
@@ -145,6 +146,8 @@ class main_screen(object):
                         self.prev_win.update_plots()
                     else:
                         self.prev_win = preview_window.prev_screen(self)
+                    self.lbl_time['text'] = delay
+                    self.countdown()
                     root.wait_variable(var)
             else:
                 if self.pub_win is not None:
@@ -166,6 +169,13 @@ class main_screen(object):
                 self.prev_win.update_plots()
             else:
                 self.prev_win = preview_window.prev_screen(self)
+
+    def countdown(self):
+        tmptime = int(self.lbl_time['text'])
+        tmptime -= 1
+        self.lbl_time['text'] = tmptime
+        if tmptime >= 0:
+            self.lbl_time.after(1000, self.countdown)
 
     def pub_win_closed(self):
         self.pub_win = None
@@ -297,6 +307,7 @@ class main_screen(object):
             self.lbl_file = tk.Label(frm_file, text='')
             lbl_delay = tk.Label(
                 frm_load, text='Delay between each phase [s]:')
+            self.lbl_time = tk.Label(self.frm_side, text='0')
 
             # creating entries
             self.cbx_scpar = ttk.Combobox(
