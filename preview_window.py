@@ -45,7 +45,7 @@ class prev_screen(object):
 
         input_phase = self.parent.get_phase()/255*2*3.1415926535897932384626433
 
-        tmp = abs(input_intensity)*np.exp(1j*input_phase)
+        tmp = abs(np.sqrt(input_intensity))*np.exp(1j*input_phase)
         paddedtmp = np.pad(tmp, 800)
 
         focus_int = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(paddedtmp)))
@@ -61,16 +61,14 @@ class prev_screen(object):
         #
         fsiz = np.divide(focus_int.shape, 2)
         self.ax3.clear()
-        self.ax3.imshow(abs(focus_int))
+        self.ax3.imshow(abs(focus_int)**2)
         self.ax3.set_ylabel('In Focus')
         self.ax3.axis([fsiz[1]-40, fsiz[1]+40, fsiz[0]-30, fsiz[0]+30])
         #
         self.ax4.clear()
         strt = int(fsiz[1]-20)
         stop = int(fsiz[1]+20)
-        print(strt)
-        print(stop)
-        self.ax4.plot(abs(focus_int[int(fsiz[0]), strt:stop]))
+        self.ax4.plot(abs(focus_int[int(fsiz[0]), strt:stop])**2)
         # self.ax4.imshow(np.angle(focus_int))
         # self.ax4.axis([360, 440, 270, 330])
 

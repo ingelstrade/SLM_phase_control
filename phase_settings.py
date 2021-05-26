@@ -264,8 +264,10 @@ class type_binary(object):
             width=10)
         self.ent_area = tk.Spinbox(lbl_frm, width=12, from_=0, to=100)
         vcmd = (parent.register(self.callback))
+        self.strvar_phi = tk.StringVar()
         self.ent_phi = tk.Entry(lbl_frm, width=12,  validate='all',
-                                validatecommand=(vcmd, '%d', '%P', '%S'))
+                                validatecommand=(vcmd, '%d', '%P', '%S'),
+                                textvariable=self.strvar_phi)
 
         # Setting up
         lbl_dir.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
@@ -324,9 +326,8 @@ class type_binary(object):
         tmpind = self.cbx_dir['values'].index(dict['direc'])
         self.cbx_dir.current(tmpind)
         self.ent_area.delete(0, tk.END)
-        self.ent_phi.delete(0, tk.END)
         self.ent_area.insert(0, dict['area'])
-        self.ent_phi.insert(0, dict['phi'])
+        self.strvar_ben.set(dict['phi'])
 
     def name_(self):
         return 'Binary'
@@ -431,8 +432,8 @@ class type_multibeams_cb(object):
         lbl_horspr = tk.Label(frm_spr, text='Horizontal spread:')
         lbl_verspr = tk.Label(frm_spr, text='Vertical spread:')
         lbl_cph = tk.Label(frm_sprrad, text='Hyp.phase diff')
-        lbl_rad = tk.Label(frm_rad, text='Radius:')
-        lbl_amp = tk.Label(frm_rad, text='Amplitude:')
+        lbl_rad = tk.Label(frm_rad, text='Phase[255]:')
+        lbl_amp = tk.Label(frm_rad, text='Choose beam:')
         lbl_pxsiz = tk.Label(frm_pxsiz, text='pixel size:')
 
         # creating entries
@@ -561,22 +562,24 @@ class type_multibeams_cb(object):
         else:
             tmprad = 0
         if self.ent_amp.get() != '':
-            amp = float(self.ent_amp.get())
+            amp = int(self.ent_amp.get())
         else:
             amp = 0
-        if amp != 0 and tmprad != 0:
-            radsign = np.sign(tmprad)
-            rad = np.abs(tmprad)
-            x = tilts
-            y = tilts
-            [X, Y] = np.meshgrid(x, y)
-            R = np.sqrt(X**2+Y**2)
-            Z = amp*radsign*(np.sqrt(rad**2+R**2)-rad)
-            ind = 0
-            for row in Z:
-                for elem in row:
-                    phases[:, :, ind] = elem + phases[:, :, ind]
-                    ind += 1
+        if tmprad != 0:
+            phases[:, :, amp] = tmprad + phases[:, :, amp]
+            phases[:, :, amp+1] = tmprad + phases[:, :, amp+1]
+            # radsign = np.sign(tmprad)
+            # rad = np.abs(tmprad)
+            # x = tilts
+            # y = tilts
+            # [X, Y] = np.meshgrid(x, y)
+            # R = np.sqrt(X**2+Y**2)
+            # Z = amp*radsign*(np.sqrt(rad**2+R**2)-rad)
+            # ind = 0
+            # for row in Z:
+            #     for elem in row:
+            #         phases[:, :, ind] = elem + phases[:, :, ind]
+            #         ind += 1
         # tic3 = time.perf_counter()
         # setting up for intensity control
         if self.ent_hit.get() != '':
