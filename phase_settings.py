@@ -10,7 +10,7 @@ print('types in')
 
 def types():
     types = ['Background', 'Flat', 'Tilt', 'Binary', 'Lens',
-             'Multibeam', 'Vortex']
+             'Multibeam', 'Vortex', 'Zernike']
     return types
 
 
@@ -29,6 +29,8 @@ def new_type(frm_mid, typ):
         return type_multibeams_cb(frm_mid)
     elif typ == 'Vortex':
         return type_vortex(frm_mid)
+    elif typ == 'Zernike':
+        return type_zernike(frm_mid)
 
 
 class type_bg(object):
@@ -799,6 +801,158 @@ class type_vortex(object):
 
     def name_(self):
         return 'Vortex'
+
+    def close_(self):
+        self.frm_.destroy()
+
+
+class type_zernike(object):
+    """shows zernike settings for phase"""
+
+    def __init__(self, parent):
+        self.frm_ = tk.Frame(parent)
+        self.frm_.grid(row=7, column=0, sticky='nsew')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Zernike')
+        lbl_frm.grid(row=0, column=0, sticky='ew')
+
+        lbl_z1 = tk.Label(lbl_frm, text='Z_00 koeff:')
+        lbl_z2 = tk.Label(lbl_frm, text='Z_11 koeff:')
+        lbl_z3 = tk.Label(lbl_frm, text='Z_1-1 koeff:')
+        lbl_z4 = tk.Label(lbl_frm, text='Z_20 koeff:')
+        lbl_z5 = tk.Label(lbl_frm, text='Z_22 koeff:')
+        lbl_z6 = tk.Label(lbl_frm, text='Z_2-2 koeff:')
+        lbl_zsize = tk.Label(lbl_frm, text='Z size:')
+        vcmd = (parent.register(self.callback))
+        self.strvar_z1 = tk.StringVar()
+        self.strvar_z2 = tk.StringVar()
+        self.strvar_z3 = tk.StringVar()
+        self.strvar_z4 = tk.StringVar()
+        self.strvar_z5 = tk.StringVar()
+        self.strvar_z6 = tk.StringVar()
+        self.strvar_zsize = tk.StringVar()
+        self.ent_z1 = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_z1)
+        self.ent_z2 = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_z2)
+        self.ent_z3 = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_z3)
+        self.ent_z4 = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_z4)
+        self.ent_z5 = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_z5)
+        self.ent_z6 = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_z6)
+        self.ent_zsize = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_zsize)
+        lbl_z1.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_z2.grid(row=1, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_z3.grid(row=2, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_z4.grid(row=3, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_z5.grid(row=4, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_z6.grid(row=5, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_zsize.grid(row=6, column=0, sticky='e', padx=(10, 0), pady=5)
+        self.ent_z1.grid(row=0, column=1, sticky='w', padx=(0, 10))
+        self.ent_z2.grid(row=1, column=1, sticky='w', padx=(0, 10))
+        self.ent_z3.grid(row=2, column=1, sticky='w', padx=(0, 10))
+        self.ent_z4.grid(row=3, column=1, sticky='w', padx=(0, 10))
+        self.ent_z5.grid(row=4, column=1, sticky='w', padx=(0, 10))
+        self.ent_z6.grid(row=5, column=1, sticky='w', padx=(0, 10))
+        self.ent_zsize.grid(row=6, column=1, sticky='w', padx=(0, 10))
+
+    def callback(self, action, P, text):
+        # action=1 -> insert
+        if(action == '1'):
+            if text in '0123456789.-+':
+                try:
+                    float(P)
+                    return True
+                except ValueError:
+                    return False
+            else:
+                return False
+        else:
+            return True
+
+    def phase(self):
+        if self.ent_z1.get() != '':
+            z1coef = float(self.ent_z1.get())
+        else:
+            z1coef = 0
+        if self.ent_z2.get() != '':
+            z2coef = float(self.ent_z2.get())
+        else:
+            z2coef = 0
+        if self.ent_z3.get() != '':
+            z3coef = float(self.ent_z3.get())
+        else:
+            z3coef = 0
+        if self.ent_z4.get() != '':
+            z4coef = float(self.ent_z4.get())
+        else:
+            z4coef = 0
+        if self.ent_z5.get() != '':
+            z5coef = float(self.ent_z5.get())
+        else:
+            z5coef = 0
+        if self.ent_z6.get() != '':
+            z6coef = float(self.ent_z6.get())
+        else:
+            z6coef = 0
+        if self.ent_zsize.get() != '':
+            zsize = float(self.ent_zsize.get())
+        else:
+            zsize = 1
+        x = np.linspace(-7.92, 7.92, num=792)  # chipsize 15.84*12mm
+        y = np.linspace(-6, 6, num=600)
+        [X, Y] = np.meshgrid(x, y)
+        theta = np.arctan(Y/X)
+        theta[X < 0] += np.pi
+        rho = np.sqrt(X**2+Y**2)/zsize
+
+        p1 = z1coef*1*np.cos(0*theta)
+        p2 = z2coef*rho*np.cos(1*theta)
+        p3 = z3coef*rho*np.sin(1*theta)
+        p4 = z4coef*(2*rho**2-1)*np.cos(0*theta)
+        p5 = z5coef*rho**2*np.cos(2*theta)
+        p6 = z6coef*rho**2*np.sin(2*theta)
+        phase = p1+p2+p3+p4+p5+p6
+        return phase
+
+    def save_(self):
+        dict = {'z1coef': self.ent_z1.get(),
+                'z2coef': self.ent_z2.get(),
+                'z3coef': self.ent_z3.get(),
+                'z4coef': self.ent_z4.get(),
+                'z5coef': self.ent_z5.get(),
+                'z6coef': self.ent_z6.get(),
+                'zsize': self.ent_zsize.get()}
+        return dict
+
+    def load_(self, dict):
+        self.strvar_z1.set(dict['z1coef'])
+        self.strvar_z2.set(dict['z2coef'])
+        self.strvar_z3.set(dict['z3coef'])
+        self.strvar_z4.set(dict['z4coef'])
+        self.strvar_z5.set(dict['z5coef'])
+        self.strvar_z6.set(dict['z6coef'])
+        self.strvar_zsize.set(dict['zsize'])
+
+    def name_(self):
+        return 'Zernike'
 
     def close_(self):
         self.frm_.destroy()
