@@ -44,7 +44,7 @@ class type_bg(object):
 
         btn_open = tk.Button(lbl_frm, text='Open Background file',
                              command=self.open_file)
-        self.lbl_file = tk.Label(lbl_frm, text='')
+        self.lbl_file = tk.Label(lbl_frm, text='', wraplength=300, justify='left')
         btn_open.grid(row=0)
         self.lbl_file.grid(row=1)
 
@@ -73,7 +73,7 @@ class type_bg(object):
         try:
             self.img = mpimg.imread(dict['filepath'])
         except:
-            print('File missing')
+            print('Bg File missing')
 
     def name_(self):
         return 'Background'
@@ -325,11 +325,13 @@ class type_binary(object):
         return dict
 
     def load_(self, dict):
+        if dict['direc'] != 'Vertical' and dict['direc'] != 'Horizontal':
+            dict['direc'] = 'Vertical'
         tmpind = self.cbx_dir['values'].index(dict['direc'])
         self.cbx_dir.current(tmpind)
         self.ent_area.delete(0, tk.END)
         self.ent_area.insert(0, dict['area'])
-        self.strvar_ben.set(dict['phi'])
+        self.strvar_phi.set(dict['phi'])
 
     def name_(self):
         return 'Binary'
@@ -557,6 +559,7 @@ class type_multibeams_cb(object):
             for ydir in ytilts:
                 phases[:, :, ind] = self.phase_tilt(xdir, ydir)
                 ind += 1
+
         # tic2 = time.perf_counter()
         # getting the hyperbolical curve on the phases
         if self.ent_rad.get() != '':
@@ -582,6 +585,7 @@ class type_multibeams_cb(object):
             #     for elem in row:
             #         phases[:, :, ind] = elem + phases[:, :, ind]
             #         ind += 1
+
         # tic3 = time.perf_counter()
         # setting up for intensity control
         if self.ent_hit.get() != '':
@@ -618,6 +622,7 @@ class type_multibeams_cb(object):
         for tmpx in xits:
             intensities[n*ii:n*(ii+1)] = (tmpx + yits + 1)
             ii += 1
+
         # tic4 = time.perf_counter()
         # modifying square intensities
         spread = tilts
@@ -627,6 +632,7 @@ class type_multibeams_cb(object):
         for tmpx in xiss:
             intensities[n*ii:n*(ii+1)] += (tmpx + yiss + 1)
             ii += 1
+
         # tic5 = time.perf_counter()
         # creating the intensity arrays (which phase to have at which pixel)
         intensities[intensities < 0] = 0
@@ -667,10 +673,9 @@ class type_multibeams_cb(object):
         yrange = np.arange(0, 600, 1)
         tot_phase = np.zeros([600, 792])
         [X, Y] = np.meshgrid(xrange, yrange)
-        def f(x): return np.int(x)
-        f2 = np.vectorize(f)
-        ind_phase = f2(
-            (np.floor(X/pxsiz) % n)*n + (np.floor(Y/pxsiz) % n))
+        ind_phase_tmp = (np.floor(X/pxsiz) % n)*n + (np.floor(Y/pxsiz) % n)
+        ind_phase = ind_phase_tmp.astype(int)
+
         # tic7 = time.perf_counter()
         iii = np.arange(0, n**2, 1)
         ind_phase2 = ind_phase.copy()
@@ -693,6 +698,7 @@ class type_multibeams_cb(object):
         # print(tic5-tic4)
         # print(tic6-tic5)
         # print(tic7-tic6)
+        # print(toc-tic7)
 
         return tot_phase
 
@@ -756,14 +762,30 @@ class type_vortex(object):
         lbl_frm.grid(row=0, column=0, sticky='ew')
 
         lbl_vor = tk.Label(lbl_frm, text='Vortex order:')
+        lbl_vordx = tk.Label(lbl_frm, text='dx [mm]:')
+        lbl_vordy = tk.Label(lbl_frm, text='dy [mm]:')
         vcmd = (parent.register(self.callback))
         self.strvar_vor = tk.StringVar()
+        self.strvar_vordx = tk.StringVar()
+        self.strvar_vordy = tk.StringVar()
         self.ent_vor = tk.Entry(
             lbl_frm, width=11,  validate='all',
             validatecommand=(vcmd, '%d', '%P', '%S'),
             textvariable=self.strvar_vor)
+        self.ent_vordx = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_vordx)
+        self.ent_vordy = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_vordy)
         lbl_vor.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_vordx.grid(row=1, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_vordy.grid(row=2, column=0, sticky='e', padx=(10, 0), pady=5)
         self.ent_vor.grid(row=0, column=1, sticky='w', padx=(0, 10))
+        self.ent_vordx.grid(row=1, column=1, sticky='w', padx=(0, 10))
+        self.ent_vordy.grid(row=2, column=1, sticky='w', padx=(0, 10))
 
     def callback(self, action, P, text):
         # action=1 -> insert
@@ -784,8 +806,16 @@ class type_vortex(object):
             vor = float(self.ent_vor.get())
         else:
             vor = 0
-        x = np.linspace(-7.92, 7.92, num=792)  # chipsize 15.84*12mm
-        y = np.linspace(-6, 6, num=600)
+        if self.ent_vordx.get() != '':
+            dx = float(self.ent_vordx.get())
+        else:
+            dx = 0
+        if self.ent_vordy.get() != '':
+            dy = float(self.ent_vordy.get())
+        else:
+            dy = 0
+        x = np.linspace(-7.92+dx, 7.92+dx, num=792)  # chipsize 15.84*12mm
+        y = np.linspace(-6+dy, 6+dy, num=600)
         [X, Y] = np.meshgrid(x, y)
         theta = np.arctan(Y/X)
         theta[X < 0] += np.pi
@@ -821,7 +851,13 @@ class type_zernike(object):
         lbl_z4 = tk.Label(lbl_frm, text='Z_20 koeff:')
         lbl_z5 = tk.Label(lbl_frm, text='Z_22 koeff:')
         lbl_z6 = tk.Label(lbl_frm, text='Z_2-2 koeff:')
+        lbl_z7 = tk.Label(lbl_frm, text='Z_31 koeff:')
+        lbl_z8 = tk.Label(lbl_frm, text='Z_3-1 koeff:')
+        lbl_z9 = tk.Label(lbl_frm, text='Z_33 koeff:')
+        lbl_z10 = tk.Label(lbl_frm, text='Z_3-3 koeff:')
         lbl_zsize = tk.Label(lbl_frm, text='Z size:')
+        lbl_zdx = tk.Label(lbl_frm, text='dx [mm]:')
+        lbl_zdy = tk.Label(lbl_frm, text='dy [mm]:')
         vcmd = (parent.register(self.callback))
         self.strvar_z1 = tk.StringVar()
         self.strvar_z2 = tk.StringVar()
@@ -829,7 +865,13 @@ class type_zernike(object):
         self.strvar_z4 = tk.StringVar()
         self.strvar_z5 = tk.StringVar()
         self.strvar_z6 = tk.StringVar()
+        self.strvar_z7 = tk.StringVar()
+        self.strvar_z8 = tk.StringVar()
+        self.strvar_z9 = tk.StringVar()
+        self.strvar_z10 = tk.StringVar()
         self.strvar_zsize = tk.StringVar()
+        self.strvar_zdx = tk.StringVar()
+        self.strvar_zdy = tk.StringVar()
         self.ent_z1 = tk.Entry(
             lbl_frm, width=11,  validate='all',
             validatecommand=(vcmd, '%d', '%P', '%S'),
@@ -854,24 +896,60 @@ class type_zernike(object):
             lbl_frm, width=11,  validate='all',
             validatecommand=(vcmd, '%d', '%P', '%S'),
             textvariable=self.strvar_z6)
+        self.ent_z7 = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_z7)
+        self.ent_z8 = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_z8)
+        self.ent_z9 = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_z9)
+        self.ent_z10 = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_z10)
         self.ent_zsize = tk.Entry(
             lbl_frm, width=11,  validate='all',
             validatecommand=(vcmd, '%d', '%P', '%S'),
             textvariable=self.strvar_zsize)
+        self.ent_zdx = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_zdx)
+        self.ent_zdy = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_zdy)
         lbl_z1.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
         lbl_z2.grid(row=1, column=0, sticky='e', padx=(10, 0), pady=5)
         lbl_z3.grid(row=2, column=0, sticky='e', padx=(10, 0), pady=5)
         lbl_z4.grid(row=3, column=0, sticky='e', padx=(10, 0), pady=5)
         lbl_z5.grid(row=4, column=0, sticky='e', padx=(10, 0), pady=5)
         lbl_z6.grid(row=5, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_zsize.grid(row=6, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_z7.grid(row=6, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_z8.grid(row=7, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_z9.grid(row=8, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_z10.grid(row=9, column=0, sticky='e', padx=(10, 0), pady=5)
+        lbl_zsize.grid(row=0, column=2, sticky='e', padx=(10, 0), pady=5)
+        lbl_zdx.grid(row=1, column=2, sticky='e', padx=(10, 0), pady=5)
+        lbl_zdy.grid(row=2, column=2, sticky='e', padx=(10, 0), pady=5)
         self.ent_z1.grid(row=0, column=1, sticky='w', padx=(0, 10))
         self.ent_z2.grid(row=1, column=1, sticky='w', padx=(0, 10))
         self.ent_z3.grid(row=2, column=1, sticky='w', padx=(0, 10))
         self.ent_z4.grid(row=3, column=1, sticky='w', padx=(0, 10))
         self.ent_z5.grid(row=4, column=1, sticky='w', padx=(0, 10))
         self.ent_z6.grid(row=5, column=1, sticky='w', padx=(0, 10))
-        self.ent_zsize.grid(row=6, column=1, sticky='w', padx=(0, 10))
+        self.ent_z7.grid(row=6, column=1, sticky='w', padx=(0, 10))
+        self.ent_z8.grid(row=7, column=1, sticky='w', padx=(0, 10))
+        self.ent_z9.grid(row=8, column=1, sticky='w', padx=(0, 10))
+        self.ent_z10.grid(row=9, column=1, sticky='w', padx=(0, 10))
+        self.ent_zsize.grid(row=0, column=3, sticky='w', padx=(0, 10))
+        self.ent_zdx.grid(row=1, column=3, sticky='w', padx=(0, 10))
+        self.ent_zdy.grid(row=2, column=3, sticky='w', padx=(0, 10))
 
     def callback(self, action, P, text):
         # action=1 -> insert
@@ -888,6 +966,7 @@ class type_zernike(object):
             return True
 
     def phase(self):
+        # tic1 = time.perf_counter()
         if self.ent_z1.get() != '':
             z1coef = float(self.ent_z1.get())
         else:
@@ -912,24 +991,68 @@ class type_zernike(object):
             z6coef = float(self.ent_z6.get())
         else:
             z6coef = 0
+        if self.ent_z7.get() != '':
+            z7coef = float(self.ent_z7.get())
+        else:
+            z7coef = 0
+        if self.ent_z8.get() != '':
+            z8coef = float(self.ent_z8.get())
+        else:
+            z8coef = 0
+        if self.ent_z9.get() != '':
+            z9coef = float(self.ent_z9.get())
+        else:
+            z9coef = 0
+        if self.ent_z10.get() != '':
+            z10coef = float(self.ent_z10.get())
+        else:
+            z10coef = 0
         if self.ent_zsize.get() != '':
             zsize = float(self.ent_zsize.get())
         else:
             zsize = 1
-        x = np.linspace(-7.92, 7.92, num=792)  # chipsize 15.84*12mm
-        y = np.linspace(-6, 6, num=600)
+        if self.ent_zdx.get() != '':
+            zdx = float(self.ent_zdx.get())
+        else:
+            zdx = 0
+        if self.ent_zdy.get() != '':
+            zdy = float(self.ent_zdy.get())
+        else:
+            zdy = 1
+        x = np.linspace(-7.92+zdx, 7.92+zdx, num=792)  # chipsize 15.84*12mm
+        y = np.linspace(-6+zdy, 6+zdy, num=600)
         [X, Y] = np.meshgrid(x, y)
         theta = np.arctan(Y/X)
         theta[X < 0] += np.pi
         rho = np.sqrt(X**2+Y**2)/zsize
+        tic2 = time.perf_counter()
+        R = [1, rho, (2*rho**2-1), rho**2, (3*rho**3-2*rho), rho**3]
+        Rnum = [1, 2, 2, 3, 4, 4, 5, 5, 6, 6]
+        mnum = [0, 1, -1, 0, 2, -2, 1, -1, 3, -3]
 
-        p1 = z1coef*1*np.cos(0*theta)
-        p2 = z2coef*rho*np.cos(1*theta)
-        p3 = z3coef*rho*np.sin(1*theta)
+        if z1coef == 0:
+            p1 = 0
+        else:
+            p1 = z1coef*1*np.cos(0*theta)
+        if z2coef == 0:
+            p2 = 0
+        else:
+            p2 = z2coef*rho*np.cos(1*theta)
+        if z3coef == 0:
+            p3 = 0
+        else:
+            p3 = z3coef*rho*np.sin(1*theta)
         p4 = z4coef*(2*rho**2-1)*np.cos(0*theta)
         p5 = z5coef*rho**2*np.cos(2*theta)
         p6 = z6coef*rho**2*np.sin(2*theta)
-        phase = p1+p2+p3+p4+p5+p6
+        p7 = z7coef*(3*rho**3-2*rho)*np.cos(1*theta)
+        p8 = z8coef*(3*rho**3-2*rho)*np.sin(1*theta)
+        p9 = z9coef*rho**3*np.cos(3*theta)
+        p10 = z10coef*rho**3*np.sin(3*theta)
+        # tic4 = time.perf_counter()
+        phase = p1+p2+p3+p4+p5+p6+p7+p8+p9+p10
+        tic5 = time.perf_counter()
+        print(tic5-tic2)
         return phase
 
     def save_(self):
@@ -939,7 +1062,13 @@ class type_zernike(object):
                 'z4coef': self.ent_z4.get(),
                 'z5coef': self.ent_z5.get(),
                 'z6coef': self.ent_z6.get(),
-                'zsize': self.ent_zsize.get()}
+                'z7coef': self.ent_z7.get(),
+                'z8coef': self.ent_z8.get(),
+                'z9coef': self.ent_z9.get(),
+                'z10coef': self.ent_z10.get(),
+                'zsize': self.ent_zsize.get(),
+                'zdx': self.ent_zdx.get(),
+                'zdy': self.ent_zdy.get()}
         return dict
 
     def load_(self, dict):
@@ -949,7 +1078,13 @@ class type_zernike(object):
         self.strvar_z4.set(dict['z4coef'])
         self.strvar_z5.set(dict['z5coef'])
         self.strvar_z6.set(dict['z6coef'])
+        self.strvar_z7.set(dict['z7coef'])
+        self.strvar_z8.set(dict['z8coef'])
+        self.strvar_z9.set(dict['z9coef'])
+        self.strvar_z10.set(dict['z10coef'])
         self.strvar_zsize.set(dict['zsize'])
+        self.strvar_zdx.set(dict['zdx'])
+        self.strvar_zdy.set(dict['zdy'])
 
     def name_(self):
         return 'Zernike'

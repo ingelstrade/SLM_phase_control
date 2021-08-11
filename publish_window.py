@@ -7,7 +7,7 @@ print('publish_window in')
 class pub_screen(object):
     """"""
 
-    def __init__(self, parent, position):
+    def __init__(self, parent, position, phase):
         self.parent = parent
         self.win = tk.Toplevel()
         try:
@@ -19,7 +19,6 @@ class pub_screen(object):
         self.win.overrideredirect(1)
         def handler(event): return self.on_close()
         self.win.bind('<Escape>', handler)
-        phase = parent.get_phase()
         img = Image.fromarray(np.uint8((phase % 256)/255*210))
         img.save('./phase.bmp')
         im = ImageTk.PhotoImage(img)
