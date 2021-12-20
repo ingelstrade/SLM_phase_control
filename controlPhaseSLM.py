@@ -126,42 +126,42 @@ class main_screen(object):
         self.prev_win = None
 
     def open_pub(self):
-        if self.but_enable_scan['relief'] == 'sunken':
-            if self.strvar_delay.get() != '':
-                delay = float(self.strvar_delay.get())
-            else:
-                delay = 1
-            filelist = self.load_filelist()
-            var = tk.IntVar()
-
-            for filepath in filelist:
-                if self.var_stop_scan.get():
-                    self.var_stop_scan.set(0)
-                    return
-                root.after(int(delay*1000), var.set, 1)
-                self.load(filepath)
-
-                # keeps to one window and updates for each filepath
-                phase = self.get_phase()
-                if self.pub_win is not None:
-                    self.pub_win.update_img(phase)
-                else:
-                    self.pub_win = publish_window.pub_screen(
-                        self, self.ent_scr.get(), phase)
-
-                # updates the phase plot as well
-                self.update_phase_plot(phase)
-                self.lbl_time['text'] = delay
-                self.countdown()
-                root.wait_variable(var)
+        phase = self.get_phase()
+        if self.pub_win is not None:
+            self.pub_win.update_img(phase)
         else:
+            self.pub_win = publish_window.pub_screen(
+                self, self.ent_scr.get(), phase)
+        self.update_phase_plot(phase)
+
+    def do_scan(self):
+        if self.strvar_delay.get() != '':
+            delay = float(self.strvar_delay.get())
+        else:
+            delay = 1
+        filelist = self.load_filelist()
+        var = tk.IntVar()
+
+        for filepath in filelist:
+            if self.var_stop_scan.get():
+                self.var_stop_scan.set(0)
+                return
+            root.after(int(delay*1000), var.set, 1)
+            self.load(filepath)
+
+            # keeps to one window and updates for each filepath
             phase = self.get_phase()
             if self.pub_win is not None:
                 self.pub_win.update_img(phase)
             else:
                 self.pub_win = publish_window.pub_screen(
                     self, self.ent_scr.get(), phase)
+
+            # updates the phase plot as well
             self.update_phase_plot(phase)
+            self.lbl_time['text'] = delay
+            self.countdown()
+            root.wait_variable(var)
 
     def countdown(self):
         tmptime = int(self.lbl_time['text'])
@@ -237,6 +237,7 @@ class main_screen(object):
 #   gets the phase from the active phase types. 0-2pi is 0-254
     def get_phase(self):
         phase = np.zeros([600, 792])
+        print(self.active_phases)
         for phase_types in self.active_phases:
             phase += phase_types.phase()
         return phase
@@ -269,6 +270,7 @@ class main_screen(object):
             with open(filepath, 'r') as f:
                 dics = json.loads(f.read())
             try:
+                self.active_phases = []
                 for num, phase in enumerate(self.phase_refs):  # loading
                     phase.load_(dics[phase.name_()]['Params'])
                     self.vars[num].set(dics[phase.name_()]['Enabled'])
@@ -322,10 +324,11 @@ class main_screen(object):
         but_openload = tk.Button(
             self.so_frm, text='Open existing loading file',
             command=self.open_loadingfile)
-        self.but_enable_scan = tk.Button(
-            frm_but, text='Enable scan', command=self.enable_scan)
+        self.but_scan = tk.Button(
+            frm_but, text='Scan', command=self.do_scan)
         but_stop_scan = tk.Button(
             frm_but, text='Stop scan', command=self.stop_scan)
+        self.var_stop_scan = tk.IntVar(value=0)
 
         # setup
         frm_scpar.grid(row=0, sticky='nsew')
@@ -335,7 +338,7 @@ class main_screen(object):
         frm_load.grid(row=4, sticky='nsew')
         frm_but.grid(row=5)
 
-        self.but_enable_scan.grid(row=0, column=0, padx=5, pady=5)
+        self.but_scan.grid(row=0, column=0, padx=5, pady=5)
         but_stop_scan.grid(row=0, column=1, padx=5, pady=5)
 
         lbl_scpar.grid(row=0, column=0, sticky='e')
@@ -426,16 +429,6 @@ class main_screen(object):
         if not filepath:
             return
         self.lbl_file['text'] = f'{filepath}'
-        return
-
-    def enable_scan(self):
-        self.var_stop_scan = tk.IntVar(value=0)
-        if self.but_enable_scan['relief'] == 'sunken':
-            self.but_enable_scan['relief'] = 'raised'
-            self.but_enable_scan['text'] = 'Enable scan'
-        else:
-            self.but_enable_scan['relief'] = 'sunken'
-            self.but_enable_scan['text'] = 'Scan enabled'
         return
 
     def load_filelist(self):
