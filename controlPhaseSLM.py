@@ -14,6 +14,10 @@ import matplotlib
 matplotlib.use("TkAgg")
 
 
+slm_size = (600, 792)
+
+
+
 class main_screen(object):
     """"""
 
@@ -236,7 +240,7 @@ class main_screen(object):
 
 #   gets the phase from the active phase types. 0-2pi is 0-254
     def get_phase(self):
-        phase = np.zeros([600, 792])
+        phase = np.zeros(slm_size)
         print(self.active_phases)
         for phase_types in self.active_phases:
             phase += phase_types.phase()

@@ -5,6 +5,14 @@ from tkinter.filedialog import askopenfilename
 import matplotlib.image as mpimg
 import time
 
+
+slm_size = (600, 792)
+chip_width = 15.84e-3
+chip_height = 12e-3
+wavelength = 800e-9
+bit_depth = 256
+
+
 print('types in')
 
 
@@ -61,7 +69,7 @@ class type_bg(object):
         if self.lbl_file['text'] != '':
             phase = self.img
         else:
-            phase = np.zeros([600, 792])
+            phase = np.zeros(slm_size)
         return phase
 
     def save_(self):
@@ -120,7 +128,7 @@ class type_flat(object):
             phi = float(self.ent_flat.get())
         else:
             phi = 0
-        phase = np.ones([600, 792])*phi
+        phase = np.ones(slm_size)*phi
         return phase
 
     def save_(self):
@@ -196,18 +204,16 @@ class type_tilt(object):
         ydir = self.ent_ydir.get()
 
         if ydir != '' and float(ydir) != 0:
-            phy = np.outer(
-                np.ones([600, 1]),
-                np.linspace(0, float(ydir)*791, num=792)) - float(ydir)*792/2
+            lim = np.ones(slm_size[1]) * float(xdir)*(slm_size[1]-1)/2
+            phy = np.linspace(-lim, +lim, slm_size[0], axis=0)
         else:
-            phy = np.zeros([600, 792])
+            phy = np.zeros(slm_size)
 
         if xdir != '' and float(xdir) != 0:
-            phx = np.outer(
-                np.linspace(0, float(xdir)*599, num=600),
-                np.ones([1, 792])) - float(xdir)*600/2
+            lim = np.ones(slm_size[0]) * float(xdir)*(slm_size[0]-1)/2
+            phx = np.linspace(-lim, +lim, slm_size[1], axis=1)
         else:
-            phx = np.zeros([600, 792])
+            phx = np.zeros(slm_size)
 
         phase = phx + phy
         del phx
@@ -301,19 +307,19 @@ class type_binary(object):
             area = 0
         if self.ent_phi.get() != '':
             tmp = float(self.ent_phi.get())
-            phi = tmp*254/2  # Converting to 0-2pi = 0-254
+            phi = tmp*bit_depth/2  # Converting to 0-2pi
         else:
             phi = 0
 
-        phase_mat = np.zeros([600, 792])
+        phase_mat = np.zeros(slm_size)
 
         if direc == 'Horizontal':
-            cutpixel = int(round(600*area/100))
-            tmp = np.ones([cutpixel, 792])*phi
+            cutpixel = int(round(slm_size[0]*area/100))
+            tmp = np.ones([cutpixel, slm_size[1]])*phi
             phase_mat[0:cutpixel, :] = tmp
         elif direc == 'Vertical':
-            cutpixel = int(round(792*area/100))
-            tmp = np.ones([600, cutpixel])*phi
+            cutpixel = int(round(slm_size[1]*area/100))
+            tmp = np.ones([slm_size[0], cutpixel])*phi
             phase_mat[:, 0:cutpixel] = tmp
         del tmp
         return phase_mat
@@ -386,13 +392,13 @@ class type_lens(object):
 
         radsign = np.sign(ben)
         rad = 2/np.abs(ben)  # R=2*f
-        x = np.linspace(-7.92e-3, 7.92e-3, num=792)  # chipsize 15.84*12mm
-        y = np.linspace(-6e-3, 6e-3, num=600)
+        x = np.linspace(-chip_width/2, chip_width/2, slm_size[1])
+        y = np.linspace(-chip_height/2, chip_height/2, slm_size[0])
         [X, Y] = np.meshgrid(x, y)
         R = np.sqrt(X**2+Y**2)  # radius on a 2d array
         Z = radsign*(np.sqrt(rad**2+R**2)-rad)
-        print(Z[:, 396])
-        Z_phi = Z/(800e-9)*256  # translating meters to wavelengths and phase
+        #print(Z[:, 396])
+        Z_phi = Z/(wavelength)*bit_depth  # translating meters to wavelengths and phase
         del X, Y, R, Z
         return Z_phi
 
@@ -553,7 +559,7 @@ class type_multibeams_cb(object):
         tilts = np.arange(-n+1, n+1, 2)  # excluding the last
         xtilts = tilts*xtilt/2
         ytilts = tilts*ytilt/2
-        phases = np.zeros([600, 792, n*n])
+        phases = np.zeros([slm_size[0], slm_size[1], n*n])
         ind = 0
         for xdir in xtilts:
             for ydir in ytilts:
@@ -605,7 +611,7 @@ class type_multibeams_cb(object):
         else:
             yis = 0
         intensities = np.ones(n**2)
-        totnum = np.ceil((600*(792+n)/(n**2)))  # nbr of pixels for each phase
+        totnum = np.ceil((slm_size[0]*(slm_size[1]+n)/(n**2)))  # nbr of pixels for each phase
         #          plus n in second dimension to account for noneven placement
         phase_nbr = np.outer(np.arange(n**2), np.ones([int(totnum)]))
 
@@ -669,9 +675,9 @@ class type_multibeams_cb(object):
         else:
             pxsiz = 1
         # creating the total phase by adding the different ones
-        xrange = np.arange(0, 792, 1)
-        yrange = np.arange(0, 600, 1)
-        tot_phase = np.zeros([600, 792])
+        xrange = np.arange(0, slm_size[1], 1)
+        yrange = np.arange(0, slm_size[0], 1)
+        tot_phase = np.zeros(slm_size)
         [X, Y] = np.meshgrid(xrange, yrange)
         ind_phase_tmp = (np.floor(X/pxsiz) % n)*n + (np.floor(Y/pxsiz) % n)
         ind_phase = ind_phase_tmp.astype(int)
@@ -704,18 +710,16 @@ class type_multibeams_cb(object):
 
     def phase_tilt(self, xdir, ydir):
         if xdir != '' and float(xdir) != 0:
-            phx = np.outer(
-                np.ones([600, 1]),
-                np.linspace(0, float(xdir)*791, num=792)) - float(xdir)*792/2
+            lim = np.ones(slm_size[0]) * float(xdir)*(slm_size[0]-1)/2
+            phx = np.linspace(-lim, +lim, slm_size[1], axis=1)
         else:
-            phx = np.zeros([600, 792])
+            phx = np.zeros(slm_size)
 
         if ydir != '' and float(ydir) != 0:
-            phy = np.outer(
-                np.linspace(0, float(ydir)*599, num=600),
-                np.ones([1, 792])) - float(ydir)*600/2
+            lim = np.ones(slm_size[1]) * float(xdir)*(slm_size[1]-1)/2
+            phy = np.linspace(-lim, +lim, slm_size[0], axis=0)
         else:
-            phy = np.zeros([600, 792])
+            phy = np.zeros(slm_size)
 
         phase = phx + phy
         return phase
@@ -814,12 +818,12 @@ class type_vortex(object):
             dy = float(self.ent_vordy.get())
         else:
             dy = 0
-        x = np.linspace(-7.92+dx, 7.92+dx, num=792)  # chipsize 15.84*12mm
-        y = np.linspace(-6+dy, 6+dy, num=600)
+        x = np.linspace(-chip_width*500+dx, chip_width*500+dx, slm_size[1])
+        y = np.linspace(-chip_height*500+dy, chip_height*500+dy, slm_size[0])
         [X, Y] = np.meshgrid(x, y)
         theta = np.arctan(Y/X)
         theta[X < 0] += np.pi
-        phase = theta*255/(2*np.pi)*vor
+        phase = theta*bit_depth/(2*np.pi)*vor
         return phase
 
     def save_(self):
@@ -1019,8 +1023,8 @@ class type_zernike(object):
             zdy = float(self.ent_zdy.get())
         else:
             zdy = 1
-        x = np.linspace(-7.92+zdx, 7.92+zdx, num=792)  # chipsize 15.84*12mm
-        y = np.linspace(-6+zdy, 6+zdy, num=600)
+        x = np.linspace(-chip_width*500+zdx, chip_width*500+zdx, slm_size[1])
+        y = np.linspace(-chip_height*500+zdy, chip_height*500+zdy, slm_size[0])
         [X, Y] = np.meshgrid(x, y)
         theta = np.arctan(Y/X)
         theta[X < 0] += np.pi
