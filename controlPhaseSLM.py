@@ -97,7 +97,7 @@ class main_screen(object):
         self.load('./last_settings.txt')
 
     def open_prev(self):
-        if self.but_enable_scan['relief'] == 'sunken':
+        if self.but_scan['relief'] == 'sunken':
             if self.strvar_delay.get() != '':
                 delay = float(self.strvar_delay.get())
             else:
