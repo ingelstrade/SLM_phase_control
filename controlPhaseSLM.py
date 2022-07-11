@@ -180,16 +180,10 @@ class main_screen(object):
     def setup_box(self, frm_):
         frm_box = tk.LabelFrame(frm_, text='Phases enabled')
         frm_box.grid(column=0)
-        self.types = phase_settings.types()  # reads in  different phase types
+        self.types = phase_settings.types  # reads in  different phase types
         self.vars = []  # init a list holding the variables from the boxes
         self.phase_refs = []  # init a list to hold the references to types
         self.tabs = []  # init a list to hold the tabs
-        self.active_phases = []
-        self.commands = [self.start_stop_0, self.start_stop_1,
-                         self.start_stop_2, self.start_stop_3,
-                         self.start_stop_4, self.start_stop_5,
-                         self.start_stop_6, self.start_stop_7,
-                         self.start_stop_8]
         for ind, typ in enumerate(self.types):
             self.var_ = (tk.IntVar())
             self.vars.append(self.var_)
@@ -199,51 +193,17 @@ class main_screen(object):
                                                            typ))
             self.box_ = tk.Checkbutton(frm_box, text=typ,
                                        variable=self.vars[ind],
-                                       onvalue=1, offvalue=0,
-                                       command=self.commands[ind])
+                                       onvalue=1, offvalue=0)
             self.box_.grid(row=ind, sticky='w')
 
-# It is a bit not so nice, but box commands cant send args. currently able to
-# run 7 different phase types
-    def start_stop_0(self):
-        self.start_stop_t(0)
 
-    def start_stop_1(self):
-        self.start_stop_t(1)
-
-    def start_stop_2(self):
-        self.start_stop_t(2)
-
-    def start_stop_3(self):
-        self.start_stop_t(3)
-
-    def start_stop_4(self):
-        self.start_stop_t(4)
-
-    def start_stop_5(self):
-        self.start_stop_t(5)
-
-    def start_stop_6(self):
-        self.start_stop_t(6)
-
-    def start_stop_7(self):
-        self.start_stop_t(7)
-
-    def start_stop_8(self):
-        self.start_stop_t(8)
-
-    def start_stop_t(self, ind):
-        if self.vars[ind].get() == 1:
-            self.active_phases.append(self.phase_refs[ind])
-        else:
-            self.active_phases.remove(self.phase_refs[ind])
-
-#   gets the phase from the active phase types. 0-2pi is 0-254
     def get_phase(self):
+        '''gets the phase from the active phase types'''
         phase = np.zeros(slm_size)
-        print(self.active_phases)
-        for phase_types in self.active_phases:
-            phase += phase_types.phase()
+        for ind, phase_types in enumerate(self.phase_refs):
+            if self.vars[ind].get() == 1:
+                print(phase_types)
+                phase += phase_types.phase()
         return phase
 
     def save(self, filepath=None):
@@ -274,12 +234,9 @@ class main_screen(object):
             with open(filepath, 'r') as f:
                 dics = json.loads(f.read())
             try:
-                self.active_phases = []
                 for num, phase in enumerate(self.phase_refs):  # loading
                     phase.load_(dics[phase.name_()]['Params'])
                     self.vars[num].set(dics[phase.name_()]['Enabled'])
-                    if dics[phase.name_()]['Enabled'] == 1:
-                        self.active_phases.append(phase)
                 self.ent_scr.delete(0, tk.END)
                 self.ent_scr.insert(0, dics['screen_pos'])
             except ValueError:
@@ -372,10 +329,11 @@ class main_screen(object):
 
     def scan_params(self):
         scparams = []
-        for phase in self.active_phases:
-            phparam = phase.save_()
-            for param in phparam.keys():
-                scparams.append(phase.name_() + ':' + param)
+        for ind, phase in enumerate(self.phase_refs):
+            if self.vars[ind].get() == 1:
+                phparam = phase.save_()
+                for param in phparam.keys():
+                    scparams.append(phase.name_() + ':' + param)
         self.cbx_scpar['values'] = scparams
         return
 

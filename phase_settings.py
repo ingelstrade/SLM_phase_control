@@ -16,10 +16,9 @@ bit_depth = 256
 print('types in')
 
 
-def types():
-    types = ['Background', 'Flat', 'Tilt', 'Binary', 'Lens',
+types = ['Background', 'Flat', 'Tilt', 'Binary', 'Lens',
              'Multibeam', 'Vortex', 'Zernike']
-    return types
+
 
 
 def new_type(frm_mid, typ):
