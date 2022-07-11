@@ -40,10 +40,35 @@ def new_type(frm_mid, typ):
         return type_zernike(frm_mid)
 
 
-class type_bg(object):
+class base_type(object):
+    '''base class for all type_phase classes'''
+    
+    def callback(self, action, P, text):
+        # action=1 -> insert
+        if(action == '1'):
+            if text in '0123456789.-+':
+                try:
+                    float(P)
+                    return True
+                except ValueError:
+                    return False
+            else:
+                return False
+        else:
+            return True
+
+    def name_(self):
+        return self.name
+    
+    def close_(self):
+        self.frm_.destroy()
+
+
+class type_bg(base_type):
     """shows background settings for phase"""
 
     def __init__(self, parent):
+        self.name = 'Background'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=0, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Background')
@@ -82,17 +107,12 @@ class type_bg(object):
         except:
             print('Bg File missing')
 
-    def name_(self):
-        return 'Background'
 
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_flat(object):
+class type_flat(base_type):
     """shows flat settings for phase"""
 
     def __init__(self, parent):
+        self.name = 'Flat'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=1, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Flat')
@@ -107,20 +127,6 @@ class type_flat(object):
             textvariable=self.strvar_flat)
         lbl_phi.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
         self.ent_flat.grid(row=0, column=1, sticky='w', padx=(0, 10))
-
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
 
     def phase(self):
         if self.ent_flat.get() != '':
@@ -137,17 +143,12 @@ class type_flat(object):
     def load_(self, dict):
         self.strvar_flat.set(dict['flat_phase'])
 
-    def name_(self):
-        return 'Flat'
 
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_tilt(object):
+class type_tilt(base_type):
     """shows the settings for redirection"""
 
     def __init__(self, parent):
+        self.name = 'Tilt'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=2, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Tilt')
@@ -183,20 +184,6 @@ class type_tilt(object):
         self.ent_ydir.grid(row=1, column=1, sticky='w', padx=(0, 10))
         lbl_step.grid(row=3, column=0, sticky='e', padx=(10, 0), pady=(0, 5))
         self.ent_tstep.grid(row=3, column=1, sticky='w', padx=(0, 10))
-
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
 
     def phase(self):
         xdir = self.ent_xdir.get()
@@ -241,17 +228,12 @@ class type_tilt(object):
         self.strvar_xdir.set(dict['ent_xdir'])
         self.strvar_ydir.set(dict['ent_ydir'])
 
-    def name_(self):
-        return 'Tilt'
 
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_binary(object):
+class type_binary(base_type):
     """shows binary settings for phase"""
 
     def __init__(self, parent):
+        self.name ='Binary'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=3, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Binary')
@@ -280,20 +262,6 @@ class type_binary(object):
         self.cbx_dir.grid(row=0, column=1, sticky='w', padx=(0, 10))
         self.ent_area.grid(row=1, column=1, sticky='w', padx=(0, 10))
         self.ent_phi.grid(row=2, column=1, sticky='w', padx=(0, 10))
-
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
 
     def phase(self):
         direc = self.cbx_dir.get()
@@ -335,17 +303,12 @@ class type_binary(object):
         self.ent_area.insert(0, dict['area'])
         self.strvar_phi.set(dict['phi'])
 
-    def name_(self):
-        return 'Binary'
 
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_lens(object):
+class type_lens(base_type):
     """shows lens settings for phase"""
 
     def __init__(self, parent):
+        self.name = 'Lens'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=4, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Lens')
@@ -364,20 +327,6 @@ class type_lens(object):
         # setup
         lbl_ben.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
         self.ent_ben.grid(row=0, column=1, sticky='w', padx=(0, 10))
-
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
 
     def phase(self):
         # getting the hyperbolical curve on the phases
@@ -405,17 +354,12 @@ class type_lens(object):
     def load_(self, dict):
         self.strvar_ben.set(dict['ben'])
 
-    def name_(self):
-        return 'Lens'
 
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_multibeams_cb(object):
+class type_multibeams_cb(base_type):
     """shows multibeam checkerboard settings for phase"""
 
     def __init__(self, parent):
+        self.name = 'Multibeam'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=5, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Multibeam')
@@ -521,20 +465,6 @@ class type_multibeams_cb(object):
 
         lbl_pxsiz.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
         self.ent_pxsiz.grid(row=0, column=1, sticky='w')
-
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
 
     def phase(self):
         # tic = time.perf_counter()
@@ -744,17 +674,12 @@ class type_multibeams_cb(object):
         self.strvar_vis.set(dict['vis'])
         self.strvar_pxsiz.set(dict['pxsiz'])
 
-    def name_(self):
-        return 'Multibeam'
 
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_vortex(object):
+class type_vortex(base_type):
     """shows vortex settings for phase"""
 
     def __init__(self, parent):
+        self.name = 'Vortex'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=6, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Vortex')
@@ -786,20 +711,6 @@ class type_vortex(object):
         self.ent_vordx.grid(row=1, column=1, sticky='w', padx=(0, 10))
         self.ent_vordy.grid(row=2, column=1, sticky='w', padx=(0, 10))
 
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
-
     def phase(self):
         if self.ent_vor.get() != '':
             vor = float(self.ent_vor.get())
@@ -828,17 +739,12 @@ class type_vortex(object):
     def load_(self, dict):
         self.strvar_vor.set(dict['vort_ord'])
 
-    def name_(self):
-        return 'Vortex'
 
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_zernike(object):
+class type_zernike(base_type):
     """shows zernike settings for phase"""
 
     def __init__(self, parent):
+        self.name = 'Zernike'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=7, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Zernike')
@@ -949,20 +855,6 @@ class type_zernike(object):
         self.ent_zsize.grid(row=0, column=3, sticky='w', padx=(0, 10))
         self.ent_zdx.grid(row=1, column=3, sticky='w', padx=(0, 10))
         self.ent_zdy.grid(row=2, column=3, sticky='w', padx=(0, 10))
-
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
 
     def phase(self):
         # tic1 = time.perf_counter()
@@ -1084,9 +976,3 @@ class type_zernike(object):
         self.strvar_zsize.set(dict['zsize'])
         self.strvar_zdx.set(dict['zdx'])
         self.strvar_zdy.set(dict['zdy'])
-
-    def name_(self):
-        return 'Zernike'
-
-    def close_(self):
-        self.frm_.destroy()
