@@ -203,7 +203,7 @@ class type_tilt(object):
         ydir = self.ent_ydir.get()
 
         if ydir != '' and float(ydir) != 0:
-            lim = np.ones(slm_size[1]) * float(xdir)*(slm_size[1]-1)/2
+            lim = np.ones(slm_size[1]) * float(ydir)*(slm_size[1]-1)/2
             phy = np.linspace(-lim, +lim, slm_size[0], axis=0)
         else:
             phy = np.zeros(slm_size)
@@ -214,10 +214,7 @@ class type_tilt(object):
         else:
             phx = np.zeros(slm_size)
 
-        phase = phx + phy
-        del phx
-        del phy
-        return phase
+        return phx + phy
 
     def left_(self):
         tmp = float(self.strvar_xdir.get()) + float(self.strvar_tstep.get())
@@ -715,13 +712,12 @@ class type_multibeams_cb(object):
             phx = np.zeros(slm_size)
 
         if ydir != '' and float(ydir) != 0:
-            lim = np.ones(slm_size[1]) * float(xdir)*(slm_size[1]-1)/2
+            lim = np.ones(slm_size[1]) * float(ydir)*(slm_size[1]-1)/2
             phy = np.linspace(-lim, +lim, slm_size[0], axis=0)
         else:
             phy = np.zeros(slm_size)
 
-        phase = phx + phy
-        return phase
+        return phx + phy
 
     def save_(self):
         dict = {'n': self.ent_n.get(),
