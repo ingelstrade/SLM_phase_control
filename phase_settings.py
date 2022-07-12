@@ -749,167 +749,35 @@ class type_zernike(base_type):
         self.frm_.grid(row=7, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Zernike')
         lbl_frm.grid(row=0, column=0, sticky='ew')
-
-        lbl_z1 = tk.Label(lbl_frm, text='Z_00 koeff:')
-        lbl_z2 = tk.Label(lbl_frm, text='Z_11 koeff:')
-        lbl_z3 = tk.Label(lbl_frm, text='Z_1-1 koeff:')
-        lbl_z4 = tk.Label(lbl_frm, text='Z_20 koeff:')
-        lbl_z5 = tk.Label(lbl_frm, text='Z_22 koeff:')
-        lbl_z6 = tk.Label(lbl_frm, text='Z_2-2 koeff:')
-        lbl_z7 = tk.Label(lbl_frm, text='Z_31 koeff:')
-        lbl_z8 = tk.Label(lbl_frm, text='Z_3-1 koeff:')
-        lbl_z9 = tk.Label(lbl_frm, text='Z_33 koeff:')
-        lbl_z10 = tk.Label(lbl_frm, text='Z_3-3 koeff:')
-        lbl_zsize = tk.Label(lbl_frm, text='Z size:')
-        lbl_zdx = tk.Label(lbl_frm, text='dx [mm]:')
-        lbl_zdy = tk.Label(lbl_frm, text='dy [mm]:')
+        
+        self.varnames = ['z1coef', 'z2coef', 'z3coef', 'z4coef', 'z5coef',
+                         'z6coef', 'z7coef', 'z8coef', 'z9coef', 'z10coef',
+                         'zsize', 'zdx', 'zdy']
+        lbl_texts = ['Z_00 koeff:', 'Z_11 koeff:', 'Z_1-1 koeff:', 
+                     'Z_20 koeff:', 'Z_22 koeff:', 'Z_2-2 koeff:',
+                     'Z_31 koeff:', 'Z_3-1 koeff:', 'Z_33 koeff:',
+                     'Z_3-3 koeff:', 'Z size:', 'dx [mm]:', 'dy [mm]:']
+        labels = [tk.Label(lbl_frm, text=lbl_text) for lbl_text in lbl_texts]        
         vcmd = (parent.register(self.callback))
-        self.strvar_z1 = tk.StringVar()
-        self.strvar_z2 = tk.StringVar()
-        self.strvar_z3 = tk.StringVar()
-        self.strvar_z4 = tk.StringVar()
-        self.strvar_z5 = tk.StringVar()
-        self.strvar_z6 = tk.StringVar()
-        self.strvar_z7 = tk.StringVar()
-        self.strvar_z8 = tk.StringVar()
-        self.strvar_z9 = tk.StringVar()
-        self.strvar_z10 = tk.StringVar()
-        self.strvar_zsize = tk.StringVar()
-        self.strvar_zdx = tk.StringVar()
-        self.strvar_zdy = tk.StringVar()
-        self.ent_z1 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z1)
-        self.ent_z2 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z2)
-        self.ent_z3 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z3)
-        self.ent_z4 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z4)
-        self.ent_z5 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z5)
-        self.ent_z6 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z6)
-        self.ent_z7 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z7)
-        self.ent_z8 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z8)
-        self.ent_z9 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z9)
-        self.ent_z10 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z10)
-        self.ent_zsize = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_zsize)
-        self.ent_zdx = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_zdx)
-        self.ent_zdy = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_zdy)
-        lbl_z1.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z2.grid(row=1, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z3.grid(row=2, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z4.grid(row=3, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z5.grid(row=4, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z6.grid(row=5, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z7.grid(row=6, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z8.grid(row=7, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z9.grid(row=8, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z10.grid(row=9, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_zsize.grid(row=0, column=2, sticky='e', padx=(10, 0), pady=5)
-        lbl_zdx.grid(row=1, column=2, sticky='e', padx=(10, 0), pady=5)
-        lbl_zdy.grid(row=2, column=2, sticky='e', padx=(10, 0), pady=5)
-        self.ent_z1.grid(row=0, column=1, sticky='w', padx=(0, 10))
-        self.ent_z2.grid(row=1, column=1, sticky='w', padx=(0, 10))
-        self.ent_z3.grid(row=2, column=1, sticky='w', padx=(0, 10))
-        self.ent_z4.grid(row=3, column=1, sticky='w', padx=(0, 10))
-        self.ent_z5.grid(row=4, column=1, sticky='w', padx=(0, 10))
-        self.ent_z6.grid(row=5, column=1, sticky='w', padx=(0, 10))
-        self.ent_z7.grid(row=6, column=1, sticky='w', padx=(0, 10))
-        self.ent_z8.grid(row=7, column=1, sticky='w', padx=(0, 10))
-        self.ent_z9.grid(row=8, column=1, sticky='w', padx=(0, 10))
-        self.ent_z10.grid(row=9, column=1, sticky='w', padx=(0, 10))
-        self.ent_zsize.grid(row=0, column=3, sticky='w', padx=(0, 10))
-        self.ent_zdx.grid(row=1, column=3, sticky='w', padx=(0, 10))
-        self.ent_zdy.grid(row=2, column=3, sticky='w', padx=(0, 10))
+        self.strvars = [tk.StringVar() for lbl_text in lbl_texts]
+        self.entries = [tk.Entry(lbl_frm, width=11,  validate='all',
+                                 validatecommand=(vcmd, '%d', '%P', '%S'),
+                                 textvariable=strvar)
+                        for strvar in self.strvars]
+        for ind, label in enumerate(labels):
+            label.grid(row=ind%10, column=2*int(ind/10), 
+                       sticky='e', padx=(10, 0), pady=5)
+        for ind, entry in enumerate(self.entries):
+            entry.grid(row=ind%10, column=2*int(ind/10)+1,
+                       sticky='w', padx=(0, 10))
 
     def phase(self):
         # tic1 = time.perf_counter()
-        if self.ent_z1.get() != '':
-            z1coef = float(self.ent_z1.get())
-        else:
-            z1coef = 0
-        if self.ent_z2.get() != '':
-            z2coef = float(self.ent_z2.get())
-        else:
-            z2coef = 0
-        if self.ent_z3.get() != '':
-            z3coef = float(self.ent_z3.get())
-        else:
-            z3coef = 0
-        if self.ent_z4.get() != '':
-            z4coef = float(self.ent_z4.get())
-        else:
-            z4coef = 0
-        if self.ent_z5.get() != '':
-            z5coef = float(self.ent_z5.get())
-        else:
-            z5coef = 0
-        if self.ent_z6.get() != '':
-            z6coef = float(self.ent_z6.get())
-        else:
-            z6coef = 0
-        if self.ent_z7.get() != '':
-            z7coef = float(self.ent_z7.get())
-        else:
-            z7coef = 0
-        if self.ent_z8.get() != '':
-            z8coef = float(self.ent_z8.get())
-        else:
-            z8coef = 0
-        if self.ent_z9.get() != '':
-            z9coef = float(self.ent_z9.get())
-        else:
-            z9coef = 0
-        if self.ent_z10.get() != '':
-            z10coef = float(self.ent_z10.get())
-        else:
-            z10coef = 0
-        if self.ent_zsize.get() != '':
-            zsize = float(self.ent_zsize.get())
-        else:
-            zsize = 1
-        if self.ent_zdx.get() != '':
-            zdx = float(self.ent_zdx.get())
-        else:
-            zdx = 0
-        if self.ent_zdy.get() != '':
-            zdy = float(self.ent_zdy.get())
-        else:
-            zdy = 1
+        coeffs = np.zeros(len(self.entries), dtype=float)
+        for i, entry in enumerate(self.entries):
+            if entry.get() != '':
+                coeffs[i] = float(entry.get())
+        zsize, zdx, zdy = coeffs[10:]
         x = np.linspace(-chip_width*500+zdx, chip_width*500+zdx, slm_size[1])
         y = np.linspace(-chip_height*500+zdy, chip_height*500+zdy, slm_size[0])
         [X, Y] = np.meshgrid(x, y)
@@ -921,25 +789,16 @@ class type_zernike(base_type):
         Rnum = [1, 2, 2, 3, 4, 4, 5, 5, 6, 6]
         mnum = [0, 1, -1, 0, 2, -2, 1, -1, 3, -3]
 
-        if z1coef == 0:
-            p1 = 0
-        else:
-            p1 = z1coef*1*np.cos(0*theta)
-        if z2coef == 0:
-            p2 = 0
-        else:
-            p2 = z2coef*rho*np.cos(1*theta)
-        if z3coef == 0:
-            p3 = 0
-        else:
-            p3 = z3coef*rho*np.sin(1*theta)
-        p4 = z4coef*(2*rho**2-1)*np.cos(0*theta)
-        p5 = z5coef*rho**2*np.cos(2*theta)
-        p6 = z6coef*rho**2*np.sin(2*theta)
-        p7 = z7coef*(3*rho**3-2*rho)*np.cos(1*theta)
-        p8 = z8coef*(3*rho**3-2*rho)*np.sin(1*theta)
-        p9 = z9coef*rho**3*np.cos(3*theta)
-        p10 = z10coef*rho**3*np.sin(3*theta)
+        p1 = coeffs[0]*1*np.cos(0*theta)
+        p2 = coeffs[1]*rho*np.cos(1*theta)
+        p3 = coeffs[2]*rho*np.sin(1*theta)
+        p4 = coeffs[3]*(2*rho**2-1)*np.cos(0*theta)
+        p5 = coeffs[4]*rho**2*np.cos(2*theta)
+        p6 = coeffs[5]*rho**2*np.sin(2*theta)
+        p7 = coeffs[6]*(3*rho**3-2*rho)*np.cos(1*theta)
+        p8 = coeffs[7]*(3*rho**3-2*rho)*np.sin(1*theta)
+        p9 = coeffs[8]*rho**3*np.cos(3*theta)
+        p10 = coeffs[9]*rho**3*np.sin(3*theta)
         # tic4 = time.perf_counter()
         phase = p1+p2+p3+p4+p5+p6+p7+p8+p9+p10
         tic5 = time.perf_counter()
@@ -947,32 +806,10 @@ class type_zernike(base_type):
         return phase
 
     def save_(self):
-        dict = {'z1coef': self.ent_z1.get(),
-                'z2coef': self.ent_z2.get(),
-                'z3coef': self.ent_z3.get(),
-                'z4coef': self.ent_z4.get(),
-                'z5coef': self.ent_z5.get(),
-                'z6coef': self.ent_z6.get(),
-                'z7coef': self.ent_z7.get(),
-                'z8coef': self.ent_z8.get(),
-                'z9coef': self.ent_z9.get(),
-                'z10coef': self.ent_z10.get(),
-                'zsize': self.ent_zsize.get(),
-                'zdx': self.ent_zdx.get(),
-                'zdy': self.ent_zdy.get()}
+        dict = {varname: self.entries[i].get() 
+                for i, varname in enumerate(self.varnames)}
         return dict
 
     def load_(self, dict):
-        self.strvar_z1.set(dict['z1coef'])
-        self.strvar_z2.set(dict['z2coef'])
-        self.strvar_z3.set(dict['z3coef'])
-        self.strvar_z4.set(dict['z4coef'])
-        self.strvar_z5.set(dict['z5coef'])
-        self.strvar_z6.set(dict['z6coef'])
-        self.strvar_z7.set(dict['z7coef'])
-        self.strvar_z8.set(dict['z8coef'])
-        self.strvar_z9.set(dict['z9coef'])
-        self.strvar_z10.set(dict['z10coef'])
-        self.strvar_zsize.set(dict['zsize'])
-        self.strvar_zdx.set(dict['zdx'])
-        self.strvar_zdy.set(dict['zdy'])
+        for i, varname in enumerate(self.varnames):
+            self.strvars[i].set(dict[varname])
