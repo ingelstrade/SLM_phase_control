@@ -344,7 +344,6 @@ class type_lens(base_type):
         [X, Y] = np.meshgrid(x, y)
         R = np.sqrt(X**2+Y**2)  # radius on a 2d array
         Z = radsign*(np.sqrt(rad**2+R**2)-rad)
-        #print(Z[:, 396])
         Z_phi = Z/(wavelength)*bit_depth  # translating meters to wavelengths and phase
         del X, Y, R, Z
         return Z_phi
@@ -507,18 +506,6 @@ class type_multibeams_cb(base_type):
         if tmprad != 0:
             phases[:, :, amp] = tmprad + phases[:, :, amp]
             phases[:, :, amp+1] = tmprad + phases[:, :, amp+1]
-            # radsign = np.sign(tmprad)
-            # rad = np.abs(tmprad)
-            # x = tilts
-            # y = tilts
-            # [X, Y] = np.meshgrid(x, y)
-            # R = np.sqrt(X**2+Y**2)
-            # Z = amp*radsign*(np.sqrt(rad**2+R**2)-rad)
-            # ind = 0
-            # for row in Z:
-            #     for elem in row:
-            #         phases[:, :, ind] = elem + phases[:, :, ind]
-            #         ind += 1
 
         # tic3 = time.perf_counter()
         # setting up for intensity control
@@ -596,7 +583,6 @@ class type_multibeams_cb(base_type):
                 strt += int(nbr)
         rng = np.random.default_rng()
         rng.shuffle(phase_nbr, axis=1)  # mixing so the changed are not tgether
-        col = np.zeros(n**2)  # keeping track of which column in phase_nbr
         # tic6 = time.perf_counter()
         if self.ent_pxsiz.get() != '':
             pxsiz = int(self.ent_pxsiz.get())
@@ -611,9 +597,8 @@ class type_multibeams_cb(base_type):
         ind_phase = ind_phase_tmp.astype(int)
 
         # tic7 = time.perf_counter()
-        iii = np.arange(0, n**2, 1)
         ind_phase2 = ind_phase.copy()
-        for ii in iii:
+        for ii in range(n**2):
             max_nbr = np.count_nonzero(ind_phase == ii)
             if max_nbr <= phase_nbr[0, :].size:
                 ind_phase2[ind_phase == ii] = phase_nbr[ii, 0:max_nbr]
@@ -621,7 +606,7 @@ class type_multibeams_cb(base_type):
                 extra = ii*np.ones([max_nbr-phase_nbr[0, :].size])
                 ind_phase2[ind_phase == ii] = np.append(phase_nbr[ii, :], extra)
 
-        for ii in iii:
+        for ii in range(n**2):
             ii_phase = phases[:, :, ii]
             tot_phase[ind_phase2 == ii] = ii_phase[ind_phase2 == ii]
         # toc = time.perf_counter()
@@ -686,46 +671,26 @@ class type_vortex(base_type):
         self.frm_.grid(row=6, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Vortex')
         lbl_frm.grid(row=0, column=0, sticky='ew')
-
-        lbl_vor = tk.Label(lbl_frm, text='Vortex order:')
-        lbl_vordx = tk.Label(lbl_frm, text='dx [mm]:')
-        lbl_vordy = tk.Label(lbl_frm, text='dy [mm]:')
+        
+        lbl_texts = ['Vortex order:', 'dx [mm]:', 'dy [mm]:']
+        labels = [tk.Label(lbl_frm, text=lbl_text) for lbl_text in lbl_texts]
         vcmd = (parent.register(self.callback))
-        self.strvar_vor = tk.StringVar()
-        self.strvar_vordx = tk.StringVar()
-        self.strvar_vordy = tk.StringVar()
-        self.ent_vor = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_vor)
-        self.ent_vordx = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_vordx)
-        self.ent_vordy = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_vordy)
-        lbl_vor.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_vordx.grid(row=1, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_vordy.grid(row=2, column=0, sticky='e', padx=(10, 0), pady=5)
-        self.ent_vor.grid(row=0, column=1, sticky='w', padx=(0, 10))
-        self.ent_vordx.grid(row=1, column=1, sticky='w', padx=(0, 10))
-        self.ent_vordy.grid(row=2, column=1, sticky='w', padx=(0, 10))
+        self.strvars = [tk.StringVar() for lbl_text in lbl_texts]
+        self.entries = [tk.Entry(lbl_frm, width=11,  validate='all',
+                                 validatecommand=(vcmd, '%d', '%P', '%S'),
+                                 textvariable=strvar)
+                        for strvar in self.strvars]
+        for ind, label in enumerate(labels):
+            label.grid(row=ind, column=0, sticky='e', padx=(10, 0), pady=5)
+        for ind, entry in enumerate(self.entries):
+            entry.grid(row=ind, column=1, sticky='w', padx=(0, 10))
 
     def phase(self):
-        if self.ent_vor.get() != '':
-            vor = float(self.ent_vor.get())
-        else:
-            vor = 0
-        if self.ent_vordx.get() != '':
-            dx = float(self.ent_vordx.get())
-        else:
-            dx = 0
-        if self.ent_vordy.get() != '':
-            dy = float(self.ent_vordy.get())
-        else:
-            dy = 0
+        coeffs = np.zeros(len(self.entries), dtype=float)
+        for i, entry in enumerate(self.entries):
+            if entry.get() != '':
+                coeffs[i] = float(entry.get())
+        vor, dx, dy = coeffs
         x = np.linspace(-chip_width*500+dx, chip_width*500+dx, slm_size[1])
         y = np.linspace(-chip_height*500+dy, chip_height*500+dy, slm_size[0])
         [X, Y] = np.meshgrid(x, y)
@@ -735,11 +700,11 @@ class type_vortex(base_type):
         return phase
 
     def save_(self):
-        dict = {'vort_ord': self.ent_vor.get()}
+        dict = {'vort_ord': self.entries[0].get()}
         return dict
 
     def load_(self, dict):
-        self.strvar_vor.set(dict['vort_ord'])
+        self.strvars[0].set(dict['vort_ord'])
 
 
 class type_zernike(base_type):
@@ -776,6 +741,7 @@ class type_zernike(base_type):
     def phase(self):
         # tic1 = time.perf_counter()
         coeffs = np.zeros(len(self.entries), dtype=float)
+        coeffs[10] = 1
         for i, entry in enumerate(self.entries):
             if entry.get() != '':
                 coeffs[i] = float(entry.get())
@@ -823,7 +789,7 @@ class type_img(type_bg):
     def __init__(self, parent):
         self.name = 'Image'
         self.frm_ = tk.Frame(parent)
-        self.frm_.grid(row=8, column=0, sticky='nsew')
+        self.frm_.grid(row=8, column=0)#, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Image')
         lbl_frm.grid(row=0, column=0, sticky='ew')
 
