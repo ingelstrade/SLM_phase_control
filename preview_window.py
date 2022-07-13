@@ -1,3 +1,4 @@
+from settings import slm_size, bit_depth
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib import pyplot as plt
@@ -6,9 +7,6 @@ import numpy as np
 import matplotlib
 matplotlib.use("TkAgg")
 
-
-slm_size = (600, 792)
-bit_depth = 256
 
 print('preview_window in')
 

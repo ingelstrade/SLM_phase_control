@@ -1,3 +1,4 @@
+from settings import SANTEC_SLM, slm_size
 import tkinter as tk
 from tkinter import ttk
 import tkinter.font as tkFont
@@ -7,14 +8,12 @@ import json
 import os
 import phase_settings
 import preview_window
-import publish_window
+if SANTEC_SLM: import _slm_py as slm
+else:          import publish_window
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib
 matplotlib.use("TkAgg")
-
-
-slm_size = (600, 792)
 
 
 

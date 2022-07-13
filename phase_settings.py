@@ -1,16 +1,10 @@
+from settings import slm_size, bit_depth, chip_width, chip_height, wavelength
 import tkinter as tk
 from tkinter import ttk
 import numpy as np
 from tkinter.filedialog import askopenfilename
 import matplotlib.image as mpimg
 import time
-
-
-slm_size = (600, 792)
-chip_width = 15.84e-3
-chip_height = 12e-3
-wavelength = 800e-9
-bit_depth = 256
 
 
 print('types in')
