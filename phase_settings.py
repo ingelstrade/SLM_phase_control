@@ -17,7 +17,7 @@ print('types in')
 
 
 types = ['Background', 'Flat', 'Tilt', 'Binary', 'Lens',
-             'Multibeam', 'Vortex', 'Zernike']
+             'Multibeam', 'Vortex', 'Zernike', 'Image']
 
 
 
@@ -38,6 +38,8 @@ def new_type(frm_mid, typ):
         return type_vortex(frm_mid)
     elif typ == 'Zernike':
         return type_zernike(frm_mid)
+    elif typ == 'Image':
+        return type_img(frm_mid)
 
 
 class base_type(object):
@@ -105,7 +107,7 @@ class type_bg(base_type):
         try:
             self.img = mpimg.imread(dict['filepath'])
         except:
-            print('Bg File missing')
+            print('File missing')
 
 
 class type_flat(base_type):
@@ -813,3 +815,20 @@ class type_zernike(base_type):
     def load_(self, dict):
         for i, varname in enumerate(self.varnames):
             self.strvars[i].set(dict[varname])
+
+
+class type_img(type_bg):
+    """shows image settings for phase"""
+
+    def __init__(self, parent):
+        self.name = 'Image'
+        self.frm_ = tk.Frame(parent)
+        self.frm_.grid(row=8, column=0, sticky='nsew')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Image')
+        lbl_frm.grid(row=0, column=0, sticky='ew')
+
+        btn_open = tk.Button(lbl_frm, text='Open Phase Profile',
+                             command=self.open_file)
+        self.lbl_file = tk.Label(lbl_frm, text='', wraplength=300, justify='left')
+        btn_open.grid(row=0)
+        self.lbl_file.grid(row=1)
