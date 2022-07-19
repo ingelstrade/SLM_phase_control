@@ -42,7 +42,10 @@ class main_screen(object):
             self.main_win,
             text='Control Phase',
             font=tkFont.Font(family='Lucida Grande', size=20))
-        lbl_screen = tk.Label(frm_top, text='SLM screen position:')
+        if SANTEC_SLM:
+            lbl_screen = tk.Label(frm_top, text='SLM display number:')
+        else:
+            lbl_screen = tk.Label(frm_top, text='SLM screen position:')
 
         # Creating buttons
         but_prev = tk.Button(frm_bot, text='Preview', command=self.open_prev)
@@ -52,8 +55,11 @@ class main_screen(object):
         but_load = tk.Button(frm_topb, text='Load Settings', command=self.load)
 
         # Creating entry
-        self.ent_scr = tk.Entry(frm_top, width=15)
-        self.ent_scr.insert(tk.END, '+right+down')
+        if SANTEC_SLM:
+            self.ent_scr = tk.Spinbox(frm_top, width=15, from_=1, to=8)
+        else:
+            self.ent_scr = tk.Entry(frm_top, width=15)
+            self.ent_scr.insert(tk.END, '+right+down')
 
         # Setting up general structure
         lbl_title.grid(row=0, column=0, sticky='ew')
@@ -129,12 +135,18 @@ class main_screen(object):
         self.prev_win = None
 
     def open_pub(self):
+        self.ent_scr.config(state='disabled')
         phase = self.get_phase()
-        if self.pub_win is not None:
-            self.pub_win.update_img(phase)
-        else:
-            self.pub_win = publish_window.pub_screen(
-                self, self.ent_scr.get(), phase)
+        if SANTEC_SLM: # Santec SLM Dispay routine
+            slm.SLM_Disp_Open(int(self.ent_scr.get()))
+            slm.SLM_Disp_Data(int(self.ent_scr.get()), phase,
+                              slm_size[1], slm_size[0])
+        else: # Hamamatsu SLM Display routine
+            if self.pub_win is not None:
+                self.pub_win.update_img(phase)
+            else:
+                self.pub_win = publish_window.pub_screen(
+                    self, self.ent_scr.get(), phase)
         self.update_phase_plot(phase)
 
     def do_scan(self):
@@ -153,15 +165,8 @@ class main_screen(object):
             self.load(filepath)
 
             # keeps to one window and updates for each filepath
-            phase = self.get_phase()
-            if self.pub_win is not None:
-                self.pub_win.update_img(phase)
-            else:
-                self.pub_win = publish_window.pub_screen(
-                    self, self.ent_scr.get(), phase)
+            self.open_pub()
 
-            # updates the phase plot as well
-            self.update_phase_plot(phase)
             self.lbl_time['text'] = delay
             self.countdown()
             root.wait_variable(var)
@@ -174,6 +179,7 @@ class main_screen(object):
             self.lbl_time.after(1000, self.countdown)
 
     def pub_win_closed(self):
+        self.ent_scr.config(state='enabled')
         self.pub_win = None
 
     def setup_box(self, frm_):
