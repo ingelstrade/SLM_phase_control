@@ -114,7 +114,8 @@ class type_flat(base_type):
         lbl_frm = tk.LabelFrame(self.frm_, text='Flat')
         lbl_frm.grid(row=0, column=0, sticky='ew')
 
-        lbl_phi = tk.Label(lbl_frm, text='Phase shift (255=2pi):')
+        lbl_phi = tk.Label(lbl_frm, 
+                           text='Phase shift ('+str(bit_depth)+'=2pi):')
         vcmd = (parent.register(self.callback))
         self.strvar_flat = tk.StringVar()
         self.ent_flat = tk.Entry(
@@ -153,7 +154,8 @@ class type_tilt(base_type):
         # Creating objects
         lbl_xdir = tk.Label(lbl_frm, text='Steepness along x-direction:')
         lbl_ydir = tk.Label(lbl_frm, text='Steepness along y-direction:')
-        lbl_255 = tk.Label(lbl_frm, text='(255 corresponds to 2pi Rad)')
+        lbl_bit = tk.Label(lbl_frm, 
+                           text='('+str(bit_depth)+' corresponds to 2pi Rad)')
         lbl_step = tk.Label(lbl_frm, text='(wasd) Step per click:')
         vcmd = (parent.register(self.callback))
         self.strvar_xdir = tk.StringVar()
@@ -175,7 +177,7 @@ class type_tilt(base_type):
         # Setting up
         lbl_xdir.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
         lbl_ydir.grid(row=1, column=0, sticky='e', padx=(10, 0), pady=(0, 5))
-        lbl_255.grid(row=2, sticky='ew', padx=(10, 10), pady=(0, 5))
+        lbl_bit.grid(row=2, sticky='ew', padx=(10, 10), pady=(0, 5))
         self.ent_xdir.grid(row=0, column=1, sticky='w', padx=(0, 10))
         self.ent_ydir.grid(row=1, column=1, sticky='w', padx=(0, 10))
         lbl_step.grid(row=3, column=0, sticky='e', padx=(10, 0), pady=(0, 5))
@@ -377,7 +379,7 @@ class type_multibeams_cb(base_type):
         lbl_horspr = tk.Label(frm_spr, text='Horizontal spread:')
         lbl_verspr = tk.Label(frm_spr, text='Vertical spread:')
         lbl_cph = tk.Label(frm_sprrad, text='Hyp.phase diff')
-        lbl_rad = tk.Label(frm_rad, text='Phase[255]:')
+        lbl_rad = tk.Label(frm_rad, text='Phase['+str(bit_depth)+']:')
         lbl_amp = tk.Label(frm_rad, text='Choose beam:')
         lbl_pxsiz = tk.Label(frm_pxsiz, text='pixel size:')
 
