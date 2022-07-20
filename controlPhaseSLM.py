@@ -179,7 +179,9 @@ class main_screen(object):
             self.lbl_time.after(1000, self.countdown)
 
     def pub_win_closed(self):
-        self.ent_scr.config(state='enabled')
+        self.ent_scr.config(state='normal')
+        if SANTEC_SLM:
+            slm.SLM_Disp_Close(int(self.ent_scr.get()))
         self.pub_win = None
 
     def setup_box(self, frm_):
@@ -441,6 +443,7 @@ class main_screen(object):
 
     def exit_prog(self):
         self.save('./last_settings.txt')
+        self.pub_win_closed()
         self.main_win.destroy()
 
 
