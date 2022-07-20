@@ -78,11 +78,15 @@ class type_bg(base_type):
 
     def open_file(self):
         filepath = askopenfilename(
-            filetypes=[('Image Files', '*.bmp'), ('All Files', '*.*')]
+            filetypes=[('CSV data arrays', '*.csv'), ('Image Files', '*.bmp'), 
+                       ('All Files', '*.*')]
         )
         if not filepath:
             return
-        self.img = mpimg.imread(filepath)
+        if filepath[-4:] == '.csv':
+            self.img = np.loadtxt(filepath, delimiter=',')
+        else:
+            self.img = mpimg.imread(filepath)
         self.lbl_file['text'] = f'{filepath}'
 
     def phase(self):

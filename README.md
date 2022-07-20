@@ -10,4 +10,5 @@ These can be found and changed in the file "settings.py".
 
 ### Updates
 
-This project is currently being updated to work with the Santec SLM-300.
+Script has been updated to include new functionality for the Santec SLM-300.
+To access it, change SANTEC_SLM to True in the file "settings.py"
