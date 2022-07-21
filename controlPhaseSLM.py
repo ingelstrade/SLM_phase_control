@@ -106,29 +106,10 @@ class main_screen(object):
         self.load('./last_settings.txt')
 
     def open_prev(self):
-        if self.but_scan['relief'] == 'sunken':
-            if self.strvar_delay.get() != '':
-                delay = float(self.strvar_delay.get())
-            else:
-                delay = 1
-            filelist = self.load_filelist()
-            var = tk.IntVar()
-            for filepath in filelist:
-                if self.var_stop_scan.get():
-                    self.var_stop_scan.set(0)
-                    return
-                root.after(int(delay*1000), var.set, 1)
-                self.load(filepath)
-                if self.prev_win is not None:
-                    self.prev_win.update_plots()
-                else:
-                    self.prev_win = preview_window.prev_screen(self)
-                root.wait_variable(var)
+        if self.prev_win is not None:
+            self.prev_win.update_plots()
         else:
-            if self.prev_win is not None:
-                self.prev_win.update_plots()
-            else:
-                self.prev_win = preview_window.prev_screen(self)
+            self.prev_win = preview_window.prev_screen(self)
 
     def prev_win_closed(self):
         print('prev closed')
@@ -256,32 +237,29 @@ class main_screen(object):
         self.so_frm.grid(row=0, sticky='nsew')
 
         # creating frames
-        frm_scpar = tk.Frame(self.so_frm)
         frm_file = tk.Frame(self.so_frm)
-        frm_load = tk.Frame(self.so_frm)
-        frm_but = tk.Frame(self.so_frm)
 
         # creating labels
-        lbl_scpar = tk.Label(frm_scpar, text='Scan parameter')
-        lbl_val = tk.Label(frm_scpar, text='Value (strt:stop:num)')
+        lbl_scpar = tk.Label(self.so_frm, text='Scan parameter')
+        lbl_val = tk.Label(self.so_frm, text='Value (strt:stop:num)')
         lbl_actf = tk.Label(frm_file, text='Active file:')
         self.lbl_file = tk.Label(frm_file, text='', wraplength=300,
                                  justify='left')
         lbl_delay = tk.Label(
-            frm_load, text='Delay between each phase [s]:')
-        self.lbl_time = tk.Label(self.frm_side, text='0')
+            self.so_frm, text='Delay between each phase [s]:')
+        self.lbl_time = tk.Label(self.so_frm, text='0')
 
         # creating entries
         self.cbx_scpar = ttk.Combobox(
-            frm_scpar, values=['Select'], postcommand=self.scan_params)
+            self.so_frm, values=['Select'], postcommand=self.scan_params)
         self.cbx_scpar.current(0)
         vcmd = (self.frm_side.register(self.callback))
         self.strvar_val = tk.StringVar()
-        ent_val = tk.Entry(frm_scpar,  width=10,  validate='all',
+        ent_val = tk.Entry(self.so_frm,  width=10,  validate='all',
                            validatecommand=(vcmd, '%d', '%P', '%S'),
                            textvariable=self.strvar_val)
         self.strvar_delay = tk.StringVar()
-        ent_delay = tk.Entry(frm_load, width=5, validate='all',
+        ent_delay = tk.Entry(self.so_frm, width=5, validate='all',
                              validatecommand=(vcmd, '%d', '%P', '%S'),
                              textvariable=self.strvar_delay)
 
@@ -293,32 +271,31 @@ class main_screen(object):
             self.so_frm, text='Open existing loading file',
             command=self.open_loadingfile)
         self.but_scan = tk.Button(
-            frm_but, text='Scan', command=self.do_scan)
+            self.so_frm, text='Scan', command=self.do_scan)
         but_stop_scan = tk.Button(
-            frm_but, text='Stop scan', command=self.stop_scan)
+            self.so_frm, text='Stop scan', command=self.stop_scan)
         self.var_stop_scan = tk.IntVar(value=0)
 
         # setup
-        frm_scpar.grid(row=0, sticky='nsew')
-        self.but_crt.grid(row=1, sticky='ew')
-        but_openload.grid(row=2, sticky='ew')
-        frm_file.grid(row=3, sticky='w')
-        frm_load.grid(row=4, sticky='nsew')
-        frm_but.grid(row=5)
+        frm_file.grid(row=3, sticky='w', columnspan=3)
+        self.but_crt.grid(row=2, column=0, sticky='ew')
+        but_openload.grid(row=2, column=1, columnspan=2, sticky='ew')
 
-        self.but_scan.grid(row=0, column=0, padx=5, pady=5)
-        but_stop_scan.grid(row=0, column=1, padx=5, pady=5)
+
+        self.but_scan.grid(row=5, column=0, padx=5, pady=5)
+        but_stop_scan.grid(row=5, column=1, columnspan=2, padx=5, pady=5)
 
         lbl_scpar.grid(row=0, column=0, sticky='e')
         lbl_val.grid(row=1, column=0, sticky='e')
-        self.cbx_scpar.grid(row=0, column=1, sticky='w')
-        ent_val.grid(row=1, column=1, sticky='w')
+        self.cbx_scpar.grid(row=0, column=1, columnspan=2, sticky='w')
+        ent_val.grid(row=1, column=1, columnspan=2, sticky='w')
 
-        lbl_actf.grid(row=0, column=0)
-        self.lbl_file.grid(row=0, column=1)
+        lbl_actf.grid(row=3, column=0)
+        self.lbl_file.grid(row=3, column=1)
 
-        lbl_delay.grid(row=0, column=0, sticky='e')
-        ent_delay.grid(row=0, column=1, sticky='w')
+        lbl_delay.grid(row=4, column=0, sticky='e')
+        ent_delay.grid(row=4, column=1, columnspan=2, sticky='w')
+        self.lbl_time.grid(row=4, column=2, sticky='w')
 
     def callback(self, action, P, text):
         # action=1 -> insert
