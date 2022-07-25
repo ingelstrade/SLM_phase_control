@@ -72,7 +72,8 @@ class type_bg(base_type):
 
         btn_open = tk.Button(lbl_frm, text='Open Background file',
                              command=self.open_file)
-        self.lbl_file = tk.Label(lbl_frm, text='', wraplength=300, justify='left')
+        self.lbl_file = tk.Label(lbl_frm, text='', wraplength=300,
+                                 justify='left', foreground='gray')
         btn_open.grid(row=0)
         self.lbl_file.grid(row=1)
 

@@ -131,10 +131,9 @@ class main_screen(object):
         self.update_phase_plot(phase)
 
     def do_scan(self):
-        if self.strvar_delay.get() != '':
-            delay = float(self.strvar_delay.get())
-        else:
-            delay = 1
+        if self.strvar_delay.get() == '':
+            self.strvar_delay.set('1')
+        delay = float(self.strvar_delay.get())
         filelist = self.load_filelist()
         var = tk.IntVar()
 
@@ -153,10 +152,8 @@ class main_screen(object):
             root.wait_variable(var)
 
     def countdown(self):
-        tmptime = int(self.lbl_time['text'])
-        tmptime -= 1
-        self.lbl_time['text'] = tmptime
-        if tmptime >= 0:
+        self.lbl_time['text'] = int(self.lbl_time['text']) - 1
+        if int(self.lbl_time['text']):
             self.lbl_time.after(1000, self.countdown)
 
     def pub_win_closed(self):
@@ -243,8 +240,8 @@ class main_screen(object):
         lbl_scpar = tk.Label(self.so_frm, text='Scan parameter')
         lbl_val = tk.Label(self.so_frm, text='Value (strt:stop:num)')
         lbl_actf = tk.Label(frm_file, text='Active file:')
-        self.lbl_file = tk.Label(frm_file, text='', wraplength=300,
-                                 justify='left')
+        self.lbl_file = tk.Label(frm_file, text='', wraplength=230,
+                                 justify='left', foreground='gray')
         lbl_delay = tk.Label(
             self.so_frm, text='Delay between each phase [s]:')
         self.lbl_time = tk.Label(self.so_frm, text='0')
@@ -301,11 +298,7 @@ class main_screen(object):
         # action=1 -> insert
         if(action == '1'):
             if text in '0123456789.-+:':
-                #    try:
-                #        float(P)
                 return True
-            #    except ValueError:
-            #        return False
             else:
                 return False
         else:
