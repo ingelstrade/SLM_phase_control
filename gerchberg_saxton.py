@@ -4,62 +4,8 @@ import tkinter as tk
 from matplotlib import pyplot as plt
 
 focal_length = 150e-3
+distance = 500e-3
 
-
-
-class GS_window(object):
-    """create a window to access the algorithm from the main program"""
-
-    def __init__(self, parent):
-        self.parent = parent
-        self.win = tk.Toplevel()
-        self.win.title('SLM Phase Control - Hologram Generator')
-        
-        vcmd = (parent.parent.register(parent.callback))
-        
-        lbl_d = tk.Label(self.win, text='distance SLM-lens [mm]:')
-        self.strvar_d = tk.StringVar()
-        self.ent_d = tk.Entry(self.win, width=5, validate='all',
-                              validatecommand=(vcmd, '%d', '%P', '%S'),
-                              textvariable=self.strvar_d)
-        lbl_f = tk.Label(self.win, text='focal length [mm]:')
-        self.strvar_f = tk.StringVar(value=focal_length)
-        self.ent_f = tk.Entry(self.win, width=5, validate='all',
-                              validatecommand=(vcmd, '%d', '%P', '%S'),
-                              textvariable=self.strvar_f)
-        btn_close = tk.Button(self.win, text='Close', command=self.close_GS)
-        
-        lbl_d.grid(row=0, column=0)
-        self.ent_d.grid(row=0, column=1)
-        lbl_f.grid(row=0, column=2)
-        self.ent_f.grid(row=0, column=3)
-        btn_close.grid(row=1)
-        '''self.fig = Figure(figsize=(5, 4), dpi=100)
-        self.ax1 = self.fig.add_subplot(221)
-        self.ax2 = self.fig.add_subplot(222)
-        self.ax3 = self.fig.add_subplot(223)
-        self.ax4 = self.fig.add_subplot(224)
-        self.img1 = FigureCanvasTkAgg(self.fig, self.win)
-        self.tk_widget_fig = self.img1.get_tk_widget()
-        self.tk_widget_fig.grid(row=0, sticky='nsew')
-        self.update_plots()'''
-
-    def close_GS(self):
-        #plt.close(self.fig)
-        self.win.destroy()
-        self.parent.gen_win = None
-
-
-
-# coordinates in the SLM plane
-x_slm = np.linspace(-chip_width/2, chip_width/2, slm_size[1])
-y_slm = np.linspace(-chip_height/2, chip_height/2, slm_size[0])
-
-# coordinates in the image plane
-x_img = np.fft.fftshift(np.fft.fftfreq(slm_size[1], 
-                                       pixel_size/(wavelength*focal_length)))
-y_img = np.fft.fftshift(np.fft.fftfreq(slm_size[0], 
-                                       pixel_size/(wavelength*focal_length)))
 
 def GS_algorithm(hologram, iterations):
     
@@ -87,6 +33,72 @@ def GS_algorithm(hologram, iterations):
         phi = np.angle(y)
     
     return A, phi
+
+
+algorithms = {'Gerchberg-Saxton (GS)': GS_algorithm}
+
+
+
+class GS_window(object):
+    """create a window to access the algorithm from the main program"""
+
+    def __init__(self, parent):
+        self.parent = parent
+        self.win = tk.Toplevel()
+        self.win.title('SLM Phase Control - Hologram Generator')
+        vcmd = (parent.parent.register(parent.callback))
+        
+        frm_set = tk.LabelFrame(self.win, text='Settings')        
+        
+        lbl_d = tk.Label(frm_set, text='distance SLM-lens [mm]:')
+        self.strvar_d = tk.StringVar(value=distance*1e3)
+        self.ent_d = tk.Entry(frm_set, width=8, validate='all',
+                              validatecommand=(vcmd, '%d', '%P', '%S'),
+                              textvariable=self.strvar_d)
+        lbl_f = tk.Label(frm_set, text='focal length [mm]:')
+        self.strvar_f = tk.StringVar(value=focal_length*1e3)
+        self.ent_f = tk.Entry(frm_set, width=8, validate='all',
+                              validatecommand=(vcmd, '%d', '%P', '%S'),
+                              textvariable=self.strvar_f)
+        lbl_algorithm = tk.Label(frm_set, text='Algorithm')
+        self.cbx_scpar = tk.ttk.Combobox(frm_set, values=list(algorithms.keys()))
+        btn_close = tk.Button(self.win, text='Close', command=self.close_GS)
+        
+        lbl_d.grid(row=0, column=0, sticky='e')
+        self.ent_d.grid(row=0, column=1, sticky='w')
+        lbl_f.grid(row=1, column=0, sticky='e')
+        self.ent_f.grid(row=1, column=1, sticky='w')
+        lbl_algorithm.grid(row=2, column=0, sticky='e')
+        self.cbx_scpar.grid(row=2, column=1, sticky='w')
+        
+        frm_set.grid(row=0)
+        btn_close.grid(row=1)
+        '''self.fig = Figure(figsize=(5, 4), dpi=100)
+        self.ax1 = self.fig.add_subplot(221)
+        self.ax2 = self.fig.add_subplot(222)
+        self.ax3 = self.fig.add_subplot(223)
+        self.ax4 = self.fig.add_subplot(224)
+        self.img1 = FigureCanvasTkAgg(self.fig, self.win)
+        self.tk_widget_fig = self.img1.get_tk_widget()
+        self.tk_widget_fig.grid(row=0, sticky='nsew')
+        self.update_plots()'''
+
+    def close_GS(self):
+        #plt.close(self.fig)
+        self.win.destroy()
+        self.parent.gen_win = None
+
+
+
+# coordinates in the SLM plane
+x_slm = np.linspace(-chip_width/2, chip_width/2, slm_size[1])
+y_slm = np.linspace(-chip_height/2, chip_height/2, slm_size[0])
+
+# coordinates in the image plane
+x_img = np.fft.fftshift(np.fft.fftfreq(slm_size[1], 
+                                       pixel_size/(wavelength*focal_length)))
+y_img = np.fft.fftshift(np.fft.fftfreq(slm_size[0], 
+                                       pixel_size/(wavelength*focal_length)))
 
 
 def normalized(data):
