@@ -10,8 +10,8 @@ import time
 print('types in')
 
 
-types = ['Background', 'Flat', 'Tilt', 'Binary', 'Lens',
-             'Multibeam', 'Vortex', 'Zernike', 'Image']
+types = ['Backgr.', 'Flat', 'Tilt', 'Binary', 'Lens',
+             'Multi', 'Vortex', 'Zernike', 'Image', 'Hologram']
 
 
 
@@ -22,11 +22,11 @@ def new_type(frm_mid, typ):
         return type_tilt(frm_mid)
     elif typ == 'Binary':
         return type_binary(frm_mid)
-    elif typ == 'Background':
+    elif typ == 'Backgr.':
         return type_bg(frm_mid)
     elif typ == 'Lens':
         return type_lens(frm_mid)
-    elif typ == 'Multibeam':
+    elif typ == 'Multi':
         return type_multibeams_cb(frm_mid)
     elif typ == 'Vortex':
         return type_vortex(frm_mid)
@@ -34,10 +34,25 @@ def new_type(frm_mid, typ):
         return type_zernike(frm_mid)
     elif typ == 'Image':
         return type_img(frm_mid)
+    elif typ == 'Hologram':
+        return type_hologram(frm_mid)
 
 
 class base_type(object):
     '''base class for all type_phase classes'''
+    
+    def open_file(self):
+        filepath = askopenfilename(
+            filetypes=[('CSV data arrays', '*.csv'), ('Image Files', '*.bmp'), 
+                       ('All Files', '*.*')]
+        )
+        if not filepath:
+            return
+        if filepath[-4:] == '.csv':
+            self.img = np.loadtxt(filepath, delimiter=',')
+        else:
+            self.img = mpimg.imread(filepath)
+        self.lbl_file['text'] = f'{filepath}'
     
     def callback(self, action, P, text):
         # action=1 -> insert
@@ -72,23 +87,10 @@ class type_bg(base_type):
 
         btn_open = tk.Button(lbl_frm, text='Open Background file',
                              command=self.open_file)
-        self.lbl_file = tk.Label(lbl_frm, text='', wraplength=300,
+        self.lbl_file = tk.Label(lbl_frm, text='', wraplength=400,
                                  justify='left', foreground='gray')
         btn_open.grid(row=0)
         self.lbl_file.grid(row=1)
-
-    def open_file(self):
-        filepath = askopenfilename(
-            filetypes=[('CSV data arrays', '*.csv'), ('Image Files', '*.bmp'), 
-                       ('All Files', '*.*')]
-        )
-        if not filepath:
-            return
-        if filepath[-4:] == '.csv':
-            self.img = np.loadtxt(filepath, delimiter=',')
-        else:
-            self.img = mpimg.imread(filepath)
-        self.lbl_file['text'] = f'{filepath}'
 
     def phase(self):
         if self.lbl_file['text'] != '':
@@ -799,3 +801,39 @@ class type_img(type_bg):
         self.lbl_file = tk.Label(lbl_frm, text='', wraplength=300, justify='left')
         btn_open.grid(row=0)
         self.lbl_file.grid(row=1)
+
+
+class type_hologram(base_type):
+    """shows hologram settings for phase"""
+
+    def __init__(self, parent):
+        self.name = 'Hologram'
+        self.frm_ = tk.Frame(parent)
+        self.frm_.grid(row=0, column=0, sticky='nsew')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Background')
+        lbl_frm.grid(row=0, column=0, sticky='ew')
+
+        btn_open = tk.Button(lbl_frm, text='Open generated hologram',
+                             command=self.open_file)
+        self.lbl_file = tk.Label(lbl_frm, text='', wraplength=400,
+                                 justify='left', foreground='gray')
+        btn_open.grid(row=0)
+        self.lbl_file.grid(row=1)
+
+    def phase(self):
+        if self.lbl_file['text'] != '':
+            phase = self.img
+        else:
+            phase = np.zeros(slm_size)
+        return phase
+
+    def save_(self):
+        dict = {'filepath': self.lbl_file['text']}
+        return dict
+
+    def load_(self, dict):
+        self.lbl_file['text'] = dict['filepath']
+        try:
+            self.img = mpimg.imread(dict['filepath'])
+        except:
+            print('File missing')

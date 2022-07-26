@@ -1,4 +1,4 @@
-from settings import SANTEC_SLM, slm_size
+from settings import SANTEC_SLM, slm_size, bit_depth
 import tkinter as tk
 from tkinter import ttk
 import tkinter.font as tkFont
@@ -78,7 +78,7 @@ class main_screen(object):
 
         # Setting up scan and phase figure
         self.scan_options()
-        self.fig = Figure(figsize=(2, 1.5), dpi=100)
+        self.fig = Figure(figsize=(2, 1.5), dpi=130)
         self.ax1 = self.fig.add_subplot(111)
         self.img1 = FigureCanvasTkAgg(self.fig, frm_topb)
         self.tk_widget_fig = self.img1.get_tk_widget()
@@ -407,8 +407,8 @@ class main_screen(object):
 
     def update_phase_plot(self, phase):
         self.ax1.clear()
-        self.ax1.imshow(phase % 256)
-        # self.ax1.set_title('Phase')
+        self.ax1.imshow(phase % (bit_depth+1), cmap='twilight',
+                        interpolation='None')
         self.img1.draw()
 
     def exit_prog(self):
