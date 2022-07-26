@@ -1,8 +1,55 @@
 from settings import slm_size, wavelength, chip_width, chip_height, pixel_size
 import numpy as np
+import tkinter as tk
 from matplotlib import pyplot as plt
 
 focal_length = 150e-3
+
+
+
+class GS_window(object):
+    """create a window to access the algorithm from the main program"""
+
+    def __init__(self, parent):
+        self.parent = parent
+        self.win = tk.Toplevel()
+        self.win.title('SLM Phase Control - Hologram Generator')
+        
+        vcmd = (parent.parent.register(parent.callback))
+        
+        lbl_d = tk.Label(self.win, text='distance SLM-lens [mm]:')
+        self.strvar_d = tk.StringVar()
+        self.ent_d = tk.Entry(self.win, width=5, validate='all',
+                              validatecommand=(vcmd, '%d', '%P', '%S'),
+                              textvariable=self.strvar_d)
+        lbl_f = tk.Label(self.win, text='focal length [mm]:')
+        self.strvar_f = tk.StringVar(value=focal_length)
+        self.ent_f = tk.Entry(self.win, width=5, validate='all',
+                              validatecommand=(vcmd, '%d', '%P', '%S'),
+                              textvariable=self.strvar_f)
+        btn_close = tk.Button(self.win, text='Close', command=self.close_GS)
+        
+        lbl_d.grid(row=0, column=0)
+        self.ent_d.grid(row=0, column=1)
+        lbl_f.grid(row=0, column=2)
+        self.ent_f.grid(row=0, column=3)
+        btn_close.grid(row=1)
+        '''self.fig = Figure(figsize=(5, 4), dpi=100)
+        self.ax1 = self.fig.add_subplot(221)
+        self.ax2 = self.fig.add_subplot(222)
+        self.ax3 = self.fig.add_subplot(223)
+        self.ax4 = self.fig.add_subplot(224)
+        self.img1 = FigureCanvasTkAgg(self.fig, self.win)
+        self.tk_widget_fig = self.img1.get_tk_widget()
+        self.tk_widget_fig.grid(row=0, sticky='nsew')
+        self.update_plots()'''
+
+    def close_GS(self):
+        #plt.close(self.fig)
+        self.win.destroy()
+        self.parent.gen_win = None
+
+
 
 # coordinates in the SLM plane
 x_slm = np.linspace(-chip_width/2, chip_width/2, slm_size[1])

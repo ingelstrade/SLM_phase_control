@@ -18,8 +18,7 @@ class prev_screen(object):
         self.parent = parent
         self.win = tk.Toplevel()
         self.win.title('SLM Phase Control - Preview')
-        def handler(): return self.on_close_prev()
-        btn_close = tk.Button(self.win, text='Close', command=handler)
+        btn_close = tk.Button(self.win, text='Close', command=self.close_prev)
         btn_close.grid(row=1)
         self.fig = Figure(figsize=(5, 4), dpi=100)
         self.ax1 = self.fig.add_subplot(221)
@@ -75,7 +74,7 @@ class prev_screen(object):
 
         self.img1.draw()
 
-    def on_close_prev(self):
+    def close_prev(self):
         plt.close(self.fig)
         self.win.destroy()
         self.parent.prev_win_closed()

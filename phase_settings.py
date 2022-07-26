@@ -5,6 +5,7 @@ import numpy as np
 from tkinter.filedialog import askopenfilename
 import matplotlib.image as mpimg
 import time
+import gerchberg_saxton as gs
 
 
 print('types in')
@@ -808,18 +809,31 @@ class type_hologram(base_type):
 
     def __init__(self, parent):
         self.name = 'Hologram'
-        self.frm_ = tk.Frame(parent)
+        self.parent = parent
+        self.frm_ = tk.Frame(self.parent)
         self.frm_.grid(row=0, column=0, sticky='nsew')
-        lbl_frm = tk.LabelFrame(self.frm_, text='Background')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Hologram')
         lbl_frm.grid(row=0, column=0, sticky='ew')
+        self.gen_win = None
 
         btn_open = tk.Button(lbl_frm, text='Open generated hologram',
                              command=self.open_file)
         self.lbl_file = tk.Label(lbl_frm, text='', wraplength=400,
                                  justify='left', foreground='gray')
+        lbl_act_file = tk.Label(lbl_frm, text='Active Hologram file:', 
+                                justify='left')
+        btn_generate = tk.Button(lbl_frm, text='Launch Hologram Generator',
+                                 command=self.open_generator)
+        
         btn_open.grid(row=0)
-        self.lbl_file.grid(row=1)
+        lbl_act_file.grid(row=1)
+        self.lbl_file.grid(row=2)
+        btn_generate.grid(row=3)
 
+    def open_generator(self):
+        if self.gen_win is None:
+            self.gen_win = gs.GS_window(self)        
+        
     def phase(self):
         if self.lbl_file['text'] != '':
             phase = self.img
