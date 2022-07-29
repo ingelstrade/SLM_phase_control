@@ -56,7 +56,7 @@ class main_screen(object):
 
         # Creating entry
         if SANTEC_SLM:
-            self.ent_scr = tk.Spinbox(frm_top, width=15, from_=1, to=8)
+            self.ent_scr = tk.Spinbox(frm_top, width=5, from_=1, to=8)
         else:
             self.ent_scr = tk.Entry(frm_top, width=15)
             self.ent_scr.insert(tk.END, '+right+down')
