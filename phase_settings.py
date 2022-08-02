@@ -1,17 +1,19 @@
+from settings import slm_size, bit_depth, chip_width, chip_height, wavelength
 import tkinter as tk
 from tkinter import ttk
 import numpy as np
 from tkinter.filedialog import askopenfilename
 import matplotlib.image as mpimg
 import time
+import gerchberg_saxton as gs
+
 
 print('types in')
 
 
-def types():
-    types = ['Background', 'Flat', 'Tilt', 'Binary', 'Lens',
-             'Multibeam', 'Vortex', 'Zernike']
-    return types
+types = ['Backgr.', 'Flat', 'Tilt', 'Binary', 'Lens',
+             'Multi', 'Vortex', 'Zernike', 'Image', 'Hologram']
+
 
 
 def new_type(frm_mid, typ):
@@ -21,86 +23,38 @@ def new_type(frm_mid, typ):
         return type_tilt(frm_mid)
     elif typ == 'Binary':
         return type_binary(frm_mid)
-    elif typ == 'Background':
+    elif typ == 'Backgr.':
         return type_bg(frm_mid)
     elif typ == 'Lens':
         return type_lens(frm_mid)
-    elif typ == 'Multibeam':
+    elif typ == 'Multi':
         return type_multibeams_cb(frm_mid)
     elif typ == 'Vortex':
         return type_vortex(frm_mid)
     elif typ == 'Zernike':
         return type_zernike(frm_mid)
+    elif typ == 'Image':
+        return type_img(frm_mid)
+    elif typ == 'Hologram':
+        return type_hologram(frm_mid)
 
 
-class type_bg(object):
-    """shows background settings for phase"""
-
-    def __init__(self, parent):
-        self.frm_ = tk.Frame(parent)
-        self.frm_.grid(row=0, column=0, sticky='nsew')
-        lbl_frm = tk.LabelFrame(self.frm_, text='Background')
-        lbl_frm.grid(row=0, column=0, sticky='ew')
-
-        btn_open = tk.Button(lbl_frm, text='Open Background file',
-                             command=self.open_file)
-        self.lbl_file = tk.Label(lbl_frm, text='', wraplength=300, justify='left')
-        btn_open.grid(row=0)
-        self.lbl_file.grid(row=1)
-
+class base_type(object):
+    '''base class for all type_phase classes'''
+    
     def open_file(self):
         filepath = askopenfilename(
-            filetypes=[('Image Files', '*.bmp'), ('All Files', '*.*')]
+            filetypes=[('CSV data arrays', '*.csv'), ('Image Files', '*.bmp'), 
+                       ('All Files', '*.*')]
         )
         if not filepath:
             return
-        self.img = mpimg.imread(filepath)
-        self.lbl_file['text'] = f'{filepath}'
-
-    def phase(self):
-        if self.lbl_file['text'] != '':
-            phase = self.img
+        if filepath[-4:] == '.csv':
+            self.img = np.loadtxt(filepath, delimiter=',')
         else:
-            phase = np.zeros([600, 792])
-        return phase
-
-    def save_(self):
-        dict = {'filepath': self.lbl_file['text']}
-        return dict
-
-    def load_(self, dict):
-        self.lbl_file['text'] = dict['filepath']
-        try:
-            self.img = mpimg.imread(dict['filepath'])
-        except:
-            print('Bg File missing')
-
-    def name_(self):
-        return 'Background'
-
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_flat(object):
-    """shows flat settings for phase"""
-
-    def __init__(self, parent):
-        self.frm_ = tk.Frame(parent)
-        self.frm_.grid(row=1, column=0, sticky='nsew')
-        lbl_frm = tk.LabelFrame(self.frm_, text='Flat')
-        lbl_frm.grid(row=0, column=0, sticky='ew')
-
-        lbl_phi = tk.Label(lbl_frm, text='Phase shift (255=2pi):')
-        vcmd = (parent.register(self.callback))
-        self.strvar_flat = tk.StringVar()
-        self.ent_flat = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_flat)
-        lbl_phi.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
-        self.ent_flat.grid(row=0, column=1, sticky='w', padx=(0, 10))
-
+            self.img = mpimg.imread(filepath)
+        self.lbl_file['text'] = f'{filepath}'
+    
     def callback(self, action, P, text):
         # action=1 -> insert
         if(action == '1'):
@@ -115,12 +69,76 @@ class type_flat(object):
         else:
             return True
 
+    def name_(self):
+        return self.name
+    
+    def close_(self):
+        self.frm_.destroy()
+
+
+class type_bg(base_type):
+    """shows background settings for phase"""
+
+    def __init__(self, parent):
+        self.name = 'Background'
+        self.frm_ = tk.Frame(parent)
+        self.frm_.grid(row=0, column=0, sticky='nsew')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Background')
+        lbl_frm.grid(row=0, column=0, sticky='ew')
+
+        btn_open = tk.Button(lbl_frm, text='Open Background file',
+                             command=self.open_file)
+        self.lbl_file = tk.Label(lbl_frm, text='', wraplength=400,
+                                 justify='left', foreground='gray')
+        btn_open.grid(row=0)
+        self.lbl_file.grid(row=1)
+
+    def phase(self):
+        if self.lbl_file['text'] != '':
+            phase = self.img
+        else:
+            phase = np.zeros(slm_size)
+        return phase
+
+    def save_(self):
+        dict = {'filepath': self.lbl_file['text']}
+        return dict
+
+    def load_(self, dict):
+        self.lbl_file['text'] = dict['filepath']
+        try:
+            self.img = mpimg.imread(dict['filepath'])
+        except:
+            print('File missing')
+
+
+class type_flat(base_type):
+    """shows flat settings for phase"""
+
+    def __init__(self, parent):
+        self.name = 'Flat'
+        self.frm_ = tk.Frame(parent)
+        self.frm_.grid(row=1, column=0, sticky='nsew')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Flat')
+        lbl_frm.grid(row=0, column=0, sticky='ew')
+
+        lbl_phi = tk.Label(lbl_frm, 
+                           text='Phase shift ('+str(bit_depth)+'=2pi):')
+        vcmd = (parent.register(self.callback))
+        self.strvar_flat = tk.StringVar()
+        self.ent_flat = tk.Entry(
+            lbl_frm, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_flat)
+        lbl_phi.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
+        self.ent_flat.grid(row=0, column=1, sticky='w', padx=(0, 10))
+
     def phase(self):
         if self.ent_flat.get() != '':
             phi = float(self.ent_flat.get())
         else:
             phi = 0
-        phase = np.ones([600, 792])*phi
+        phase = np.ones(slm_size)*phi
         return phase
 
     def save_(self):
@@ -130,17 +148,12 @@ class type_flat(object):
     def load_(self, dict):
         self.strvar_flat.set(dict['flat_phase'])
 
-    def name_(self):
-        return 'Flat'
 
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_tilt(object):
+class type_tilt(base_type):
     """shows the settings for redirection"""
 
     def __init__(self, parent):
+        self.name = 'Tilt'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=2, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Tilt')
@@ -149,7 +162,8 @@ class type_tilt(object):
         # Creating objects
         lbl_xdir = tk.Label(lbl_frm, text='Steepness along x-direction:')
         lbl_ydir = tk.Label(lbl_frm, text='Steepness along y-direction:')
-        lbl_255 = tk.Label(lbl_frm, text='(255 corresponds to 2pi Rad)')
+        lbl_bit = tk.Label(lbl_frm, 
+                           text='('+str(bit_depth)+' corresponds to 2pi Rad)')
         lbl_step = tk.Label(lbl_frm, text='(wasd) Step per click:')
         vcmd = (parent.register(self.callback))
         self.strvar_xdir = tk.StringVar()
@@ -171,48 +185,29 @@ class type_tilt(object):
         # Setting up
         lbl_xdir.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
         lbl_ydir.grid(row=1, column=0, sticky='e', padx=(10, 0), pady=(0, 5))
-        lbl_255.grid(row=2, sticky='ew', padx=(10, 10), pady=(0, 5))
+        lbl_bit.grid(row=2, sticky='ew', padx=(10, 10), pady=(0, 5))
         self.ent_xdir.grid(row=0, column=1, sticky='w', padx=(0, 10))
         self.ent_ydir.grid(row=1, column=1, sticky='w', padx=(0, 10))
         lbl_step.grid(row=3, column=0, sticky='e', padx=(10, 0), pady=(0, 5))
         self.ent_tstep.grid(row=3, column=1, sticky='w', padx=(0, 10))
-
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
 
     def phase(self):
         xdir = self.ent_xdir.get()
         ydir = self.ent_ydir.get()
 
         if ydir != '' and float(ydir) != 0:
-            phy = np.outer(
-                np.ones([600, 1]),
-                np.linspace(0, float(ydir)*791, num=792)) - float(ydir)*792/2
+            lim = np.ones(slm_size[1]) * float(ydir)*(slm_size[1]-1)/2
+            phy = np.linspace(-lim, +lim, slm_size[0], axis=0)
         else:
-            phy = np.zeros([600, 792])
+            phy = np.zeros(slm_size)
 
         if xdir != '' and float(xdir) != 0:
-            phx = np.outer(
-                np.linspace(0, float(xdir)*599, num=600),
-                np.ones([1, 792])) - float(xdir)*600/2
+            lim = np.ones(slm_size[0]) * float(xdir)*(slm_size[0]-1)/2
+            phx = np.linspace(-lim, +lim, slm_size[1], axis=1)
         else:
-            phx = np.zeros([600, 792])
+            phx = np.zeros(slm_size)
 
-        phase = phx + phy
-        del phx
-        del phy
-        return phase
+        return phx + phy
 
     def left_(self):
         tmp = float(self.strvar_xdir.get()) + float(self.strvar_tstep.get())
@@ -239,17 +234,12 @@ class type_tilt(object):
         self.strvar_xdir.set(dict['ent_xdir'])
         self.strvar_ydir.set(dict['ent_ydir'])
 
-    def name_(self):
-        return 'Tilt'
 
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_binary(object):
+class type_binary(base_type):
     """shows binary settings for phase"""
 
     def __init__(self, parent):
+        self.name ='Binary'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=3, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Binary')
@@ -279,20 +269,6 @@ class type_binary(object):
         self.ent_area.grid(row=1, column=1, sticky='w', padx=(0, 10))
         self.ent_phi.grid(row=2, column=1, sticky='w', padx=(0, 10))
 
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
-
     def phase(self):
         direc = self.cbx_dir.get()
         if self.ent_area.get() != '':
@@ -301,19 +277,19 @@ class type_binary(object):
             area = 0
         if self.ent_phi.get() != '':
             tmp = float(self.ent_phi.get())
-            phi = tmp*254/2  # Converting to 0-2pi = 0-254
+            phi = tmp*bit_depth/2  # Converting to 0-2pi
         else:
             phi = 0
 
-        phase_mat = np.zeros([600, 792])
+        phase_mat = np.zeros(slm_size)
 
         if direc == 'Horizontal':
-            cutpixel = int(round(600*area/100))
-            tmp = np.ones([cutpixel, 792])*phi
+            cutpixel = int(round(slm_size[0]*area/100))
+            tmp = np.ones([cutpixel, slm_size[1]])*phi
             phase_mat[0:cutpixel, :] = tmp
         elif direc == 'Vertical':
-            cutpixel = int(round(792*area/100))
-            tmp = np.ones([600, cutpixel])*phi
+            cutpixel = int(round(slm_size[1]*area/100))
+            tmp = np.ones([slm_size[0], cutpixel])*phi
             phase_mat[:, 0:cutpixel] = tmp
         del tmp
         return phase_mat
@@ -333,17 +309,12 @@ class type_binary(object):
         self.ent_area.insert(0, dict['area'])
         self.strvar_phi.set(dict['phi'])
 
-    def name_(self):
-        return 'Binary'
 
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_lens(object):
+class type_lens(base_type):
     """shows lens settings for phase"""
 
     def __init__(self, parent):
+        self.name = 'Lens'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=4, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Lens')
@@ -363,20 +334,6 @@ class type_lens(object):
         lbl_ben.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
         self.ent_ben.grid(row=0, column=1, sticky='w', padx=(0, 10))
 
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
-
     def phase(self):
         # getting the hyperbolical curve on the phases
         if self.ent_ben.get() != '':
@@ -386,13 +343,12 @@ class type_lens(object):
 
         radsign = np.sign(ben)
         rad = 2/np.abs(ben)  # R=2*f
-        x = np.linspace(-7.92e-3, 7.92e-3, num=792)  # chipsize 15.84*12mm
-        y = np.linspace(-6e-3, 6e-3, num=600)
+        x = np.linspace(-chip_width/2, chip_width/2, slm_size[1])
+        y = np.linspace(-chip_height/2, chip_height/2, slm_size[0])
         [X, Y] = np.meshgrid(x, y)
         R = np.sqrt(X**2+Y**2)  # radius on a 2d array
         Z = radsign*(np.sqrt(rad**2+R**2)-rad)
-        print(Z[:, 396])
-        Z_phi = Z/(800e-9)*256  # translating meters to wavelengths and phase
+        Z_phi = Z/(wavelength)*bit_depth  # translating meters to wavelengths and phase
         del X, Y, R, Z
         return Z_phi
 
@@ -403,17 +359,12 @@ class type_lens(object):
     def load_(self, dict):
         self.strvar_ben.set(dict['ben'])
 
-    def name_(self):
-        return 'Lens'
 
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_multibeams_cb(object):
+class type_multibeams_cb(base_type):
     """shows multibeam checkerboard settings for phase"""
 
     def __init__(self, parent):
+        self.name = 'Multibeam'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=5, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Multibeam')
@@ -436,7 +387,7 @@ class type_multibeams_cb(object):
         lbl_horspr = tk.Label(frm_spr, text='Horizontal spread:')
         lbl_verspr = tk.Label(frm_spr, text='Vertical spread:')
         lbl_cph = tk.Label(frm_sprrad, text='Hyp.phase diff')
-        lbl_rad = tk.Label(frm_rad, text='Phase[255]:')
+        lbl_rad = tk.Label(frm_rad, text='Phase['+str(bit_depth)+']:')
         lbl_amp = tk.Label(frm_rad, text='Choose beam:')
         lbl_pxsiz = tk.Label(frm_pxsiz, text='pixel size:')
 
@@ -520,20 +471,6 @@ class type_multibeams_cb(object):
         lbl_pxsiz.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
         self.ent_pxsiz.grid(row=0, column=1, sticky='w')
 
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
-
     def phase(self):
         # tic = time.perf_counter()
         if self.ent_n.get() != '':
@@ -553,7 +490,7 @@ class type_multibeams_cb(object):
         tilts = np.arange(-n+1, n+1, 2)  # excluding the last
         xtilts = tilts*xtilt/2
         ytilts = tilts*ytilt/2
-        phases = np.zeros([600, 792, n*n])
+        phases = np.zeros([slm_size[0], slm_size[1], n*n])
         ind = 0
         for xdir in xtilts:
             for ydir in ytilts:
@@ -573,18 +510,6 @@ class type_multibeams_cb(object):
         if tmprad != 0:
             phases[:, :, amp] = tmprad + phases[:, :, amp]
             phases[:, :, amp+1] = tmprad + phases[:, :, amp+1]
-            # radsign = np.sign(tmprad)
-            # rad = np.abs(tmprad)
-            # x = tilts
-            # y = tilts
-            # [X, Y] = np.meshgrid(x, y)
-            # R = np.sqrt(X**2+Y**2)
-            # Z = amp*radsign*(np.sqrt(rad**2+R**2)-rad)
-            # ind = 0
-            # for row in Z:
-            #     for elem in row:
-            #         phases[:, :, ind] = elem + phases[:, :, ind]
-            #         ind += 1
 
         # tic3 = time.perf_counter()
         # setting up for intensity control
@@ -605,7 +530,7 @@ class type_multibeams_cb(object):
         else:
             yis = 0
         intensities = np.ones(n**2)
-        totnum = np.ceil((600*(792+n)/(n**2)))  # nbr of pixels for each phase
+        totnum = np.ceil((slm_size[0]*(slm_size[1]+n)/(n**2)))  # nbr of pixels for each phase
         #          plus n in second dimension to account for noneven placement
         phase_nbr = np.outer(np.arange(n**2), np.ones([int(totnum)]))
 
@@ -662,24 +587,22 @@ class type_multibeams_cb(object):
                 strt += int(nbr)
         rng = np.random.default_rng()
         rng.shuffle(phase_nbr, axis=1)  # mixing so the changed are not tgether
-        col = np.zeros(n**2)  # keeping track of which column in phase_nbr
         # tic6 = time.perf_counter()
         if self.ent_pxsiz.get() != '':
             pxsiz = int(self.ent_pxsiz.get())
         else:
             pxsiz = 1
         # creating the total phase by adding the different ones
-        xrange = np.arange(0, 792, 1)
-        yrange = np.arange(0, 600, 1)
-        tot_phase = np.zeros([600, 792])
+        xrange = np.arange(0, slm_size[1], 1)
+        yrange = np.arange(0, slm_size[0], 1)
+        tot_phase = np.zeros(slm_size)
         [X, Y] = np.meshgrid(xrange, yrange)
         ind_phase_tmp = (np.floor(X/pxsiz) % n)*n + (np.floor(Y/pxsiz) % n)
         ind_phase = ind_phase_tmp.astype(int)
 
         # tic7 = time.perf_counter()
-        iii = np.arange(0, n**2, 1)
         ind_phase2 = ind_phase.copy()
-        for ii in iii:
+        for ii in range(n**2):
             max_nbr = np.count_nonzero(ind_phase == ii)
             if max_nbr <= phase_nbr[0, :].size:
                 ind_phase2[ind_phase == ii] = phase_nbr[ii, 0:max_nbr]
@@ -687,7 +610,7 @@ class type_multibeams_cb(object):
                 extra = ii*np.ones([max_nbr-phase_nbr[0, :].size])
                 ind_phase2[ind_phase == ii] = np.append(phase_nbr[ii, :], extra)
 
-        for ii in iii:
+        for ii in range(n**2):
             ii_phase = phases[:, :, ii]
             tot_phase[ind_phase2 == ii] = ii_phase[ind_phase2 == ii]
         # toc = time.perf_counter()
@@ -704,21 +627,18 @@ class type_multibeams_cb(object):
 
     def phase_tilt(self, xdir, ydir):
         if xdir != '' and float(xdir) != 0:
-            phx = np.outer(
-                np.ones([600, 1]),
-                np.linspace(0, float(xdir)*791, num=792)) - float(xdir)*792/2
+            lim = np.ones(slm_size[0]) * float(xdir)*(slm_size[0]-1)/2
+            phx = np.linspace(-lim, +lim, slm_size[1], axis=1)
         else:
-            phx = np.zeros([600, 792])
+            phx = np.zeros(slm_size)
 
         if ydir != '' and float(ydir) != 0:
-            phy = np.outer(
-                np.linspace(0, float(ydir)*599, num=600),
-                np.ones([1, 792])) - float(ydir)*600/2
+            lim = np.ones(slm_size[1]) * float(ydir)*(slm_size[1]-1)/2
+            phy = np.linspace(-lim, +lim, slm_size[0], axis=0)
         else:
-            phy = np.zeros([600, 792])
+            phy = np.zeros(slm_size)
 
-        phase = phx + phy
-        return phase
+        return phx + phy
 
     def save_(self):
         dict = {'n': self.ent_n.get(),
@@ -745,282 +665,93 @@ class type_multibeams_cb(object):
         self.strvar_vis.set(dict['vis'])
         self.strvar_pxsiz.set(dict['pxsiz'])
 
-    def name_(self):
-        return 'Multibeam'
 
-    def close_(self):
-        self.frm_.destroy()
-
-
-class type_vortex(object):
+class type_vortex(base_type):
     """shows vortex settings for phase"""
 
     def __init__(self, parent):
+        self.name = 'Vortex'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=6, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Vortex')
         lbl_frm.grid(row=0, column=0, sticky='ew')
-
-        lbl_vor = tk.Label(lbl_frm, text='Vortex order:')
-        lbl_vordx = tk.Label(lbl_frm, text='dx [mm]:')
-        lbl_vordy = tk.Label(lbl_frm, text='dy [mm]:')
+        
+        lbl_texts = ['Vortex order:', 'dx [mm]:', 'dy [mm]:']
+        labels = [tk.Label(lbl_frm, text=lbl_text) for lbl_text in lbl_texts]
         vcmd = (parent.register(self.callback))
-        self.strvar_vor = tk.StringVar()
-        self.strvar_vordx = tk.StringVar()
-        self.strvar_vordy = tk.StringVar()
-        self.ent_vor = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_vor)
-        self.ent_vordx = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_vordx)
-        self.ent_vordy = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_vordy)
-        lbl_vor.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_vordx.grid(row=1, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_vordy.grid(row=2, column=0, sticky='e', padx=(10, 0), pady=5)
-        self.ent_vor.grid(row=0, column=1, sticky='w', padx=(0, 10))
-        self.ent_vordx.grid(row=1, column=1, sticky='w', padx=(0, 10))
-        self.ent_vordy.grid(row=2, column=1, sticky='w', padx=(0, 10))
-
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
+        self.strvars = [tk.StringVar() for lbl_text in lbl_texts]
+        self.entries = [tk.Entry(lbl_frm, width=11,  validate='all',
+                                 validatecommand=(vcmd, '%d', '%P', '%S'),
+                                 textvariable=strvar)
+                        for strvar in self.strvars]
+        for ind, label in enumerate(labels):
+            label.grid(row=ind, column=0, sticky='e', padx=(10, 0), pady=5)
+        for ind, entry in enumerate(self.entries):
+            entry.grid(row=ind, column=1, sticky='w', padx=(0, 10))
 
     def phase(self):
-        if self.ent_vor.get() != '':
-            vor = float(self.ent_vor.get())
-        else:
-            vor = 0
-        if self.ent_vordx.get() != '':
-            dx = float(self.ent_vordx.get())
-        else:
-            dx = 0
-        if self.ent_vordy.get() != '':
-            dy = float(self.ent_vordy.get())
-        else:
-            dy = 0
-        x = np.linspace(-7.92+dx, 7.92+dx, num=792)  # chipsize 15.84*12mm
-        y = np.linspace(-6+dy, 6+dy, num=600)
+        coeffs = np.zeros(len(self.entries), dtype=float)
+        for i, entry in enumerate(self.entries):
+            if entry.get() != '':
+                coeffs[i] = float(entry.get())
+        vor, dx, dy = coeffs
+        x = np.linspace(-chip_width*500+dx, chip_width*500+dx, slm_size[1])
+        y = np.linspace(-chip_height*500+dy, chip_height*500+dy, slm_size[0])
         [X, Y] = np.meshgrid(x, y)
         theta = np.arctan(Y/X)
         theta[X < 0] += np.pi
-        phase = theta*255/(2*np.pi)*vor
+        phase = theta*bit_depth/(2*np.pi)*vor
         return phase
 
     def save_(self):
-        dict = {'vort_ord': self.ent_vor.get()}
+        dict = {'vort_ord': self.entries[0].get()}
         return dict
 
     def load_(self, dict):
-        self.strvar_vor.set(dict['vort_ord'])
-
-    def name_(self):
-        return 'Vortex'
-
-    def close_(self):
-        self.frm_.destroy()
+        self.strvars[0].set(dict['vort_ord'])
 
 
-class type_zernike(object):
+class type_zernike(base_type):
     """shows zernike settings for phase"""
 
     def __init__(self, parent):
+        self.name = 'Zernike'
         self.frm_ = tk.Frame(parent)
         self.frm_.grid(row=7, column=0, sticky='nsew')
         lbl_frm = tk.LabelFrame(self.frm_, text='Zernike')
         lbl_frm.grid(row=0, column=0, sticky='ew')
-
-        lbl_z1 = tk.Label(lbl_frm, text='Z_00 koeff:')
-        lbl_z2 = tk.Label(lbl_frm, text='Z_11 koeff:')
-        lbl_z3 = tk.Label(lbl_frm, text='Z_1-1 koeff:')
-        lbl_z4 = tk.Label(lbl_frm, text='Z_20 koeff:')
-        lbl_z5 = tk.Label(lbl_frm, text='Z_22 koeff:')
-        lbl_z6 = tk.Label(lbl_frm, text='Z_2-2 koeff:')
-        lbl_z7 = tk.Label(lbl_frm, text='Z_31 koeff:')
-        lbl_z8 = tk.Label(lbl_frm, text='Z_3-1 koeff:')
-        lbl_z9 = tk.Label(lbl_frm, text='Z_33 koeff:')
-        lbl_z10 = tk.Label(lbl_frm, text='Z_3-3 koeff:')
-        lbl_zsize = tk.Label(lbl_frm, text='Z size:')
-        lbl_zdx = tk.Label(lbl_frm, text='dx [mm]:')
-        lbl_zdy = tk.Label(lbl_frm, text='dy [mm]:')
+        
+        self.varnames = ['z1coef', 'z2coef', 'z3coef', 'z4coef', 'z5coef',
+                         'z6coef', 'z7coef', 'z8coef', 'z9coef', 'z10coef',
+                         'zsize', 'zdx', 'zdy']
+        lbl_texts = ['Z_00 koeff:', 'Z_11 koeff:', 'Z_1-1 koeff:', 
+                     'Z_20 koeff:', 'Z_22 koeff:', 'Z_2-2 koeff:',
+                     'Z_31 koeff:', 'Z_3-1 koeff:', 'Z_33 koeff:',
+                     'Z_3-3 koeff:', 'Z size:', 'dx [mm]:', 'dy [mm]:']
+        labels = [tk.Label(lbl_frm, text=lbl_text) for lbl_text in lbl_texts]        
         vcmd = (parent.register(self.callback))
-        self.strvar_z1 = tk.StringVar()
-        self.strvar_z2 = tk.StringVar()
-        self.strvar_z3 = tk.StringVar()
-        self.strvar_z4 = tk.StringVar()
-        self.strvar_z5 = tk.StringVar()
-        self.strvar_z6 = tk.StringVar()
-        self.strvar_z7 = tk.StringVar()
-        self.strvar_z8 = tk.StringVar()
-        self.strvar_z9 = tk.StringVar()
-        self.strvar_z10 = tk.StringVar()
-        self.strvar_zsize = tk.StringVar()
-        self.strvar_zdx = tk.StringVar()
-        self.strvar_zdy = tk.StringVar()
-        self.ent_z1 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z1)
-        self.ent_z2 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z2)
-        self.ent_z3 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z3)
-        self.ent_z4 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z4)
-        self.ent_z5 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z5)
-        self.ent_z6 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z6)
-        self.ent_z7 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z7)
-        self.ent_z8 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z8)
-        self.ent_z9 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z9)
-        self.ent_z10 = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_z10)
-        self.ent_zsize = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_zsize)
-        self.ent_zdx = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_zdx)
-        self.ent_zdy = tk.Entry(
-            lbl_frm, width=11,  validate='all',
-            validatecommand=(vcmd, '%d', '%P', '%S'),
-            textvariable=self.strvar_zdy)
-        lbl_z1.grid(row=0, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z2.grid(row=1, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z3.grid(row=2, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z4.grid(row=3, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z5.grid(row=4, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z6.grid(row=5, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z7.grid(row=6, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z8.grid(row=7, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z9.grid(row=8, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_z10.grid(row=9, column=0, sticky='e', padx=(10, 0), pady=5)
-        lbl_zsize.grid(row=0, column=2, sticky='e', padx=(10, 0), pady=5)
-        lbl_zdx.grid(row=1, column=2, sticky='e', padx=(10, 0), pady=5)
-        lbl_zdy.grid(row=2, column=2, sticky='e', padx=(10, 0), pady=5)
-        self.ent_z1.grid(row=0, column=1, sticky='w', padx=(0, 10))
-        self.ent_z2.grid(row=1, column=1, sticky='w', padx=(0, 10))
-        self.ent_z3.grid(row=2, column=1, sticky='w', padx=(0, 10))
-        self.ent_z4.grid(row=3, column=1, sticky='w', padx=(0, 10))
-        self.ent_z5.grid(row=4, column=1, sticky='w', padx=(0, 10))
-        self.ent_z6.grid(row=5, column=1, sticky='w', padx=(0, 10))
-        self.ent_z7.grid(row=6, column=1, sticky='w', padx=(0, 10))
-        self.ent_z8.grid(row=7, column=1, sticky='w', padx=(0, 10))
-        self.ent_z9.grid(row=8, column=1, sticky='w', padx=(0, 10))
-        self.ent_z10.grid(row=9, column=1, sticky='w', padx=(0, 10))
-        self.ent_zsize.grid(row=0, column=3, sticky='w', padx=(0, 10))
-        self.ent_zdx.grid(row=1, column=3, sticky='w', padx=(0, 10))
-        self.ent_zdy.grid(row=2, column=3, sticky='w', padx=(0, 10))
-
-    def callback(self, action, P, text):
-        # action=1 -> insert
-        if(action == '1'):
-            if text in '0123456789.-+':
-                try:
-                    float(P)
-                    return True
-                except ValueError:
-                    return False
-            else:
-                return False
-        else:
-            return True
+        self.strvars = [tk.StringVar() for lbl_text in lbl_texts]
+        self.entries = [tk.Entry(lbl_frm, width=11,  validate='all',
+                                 validatecommand=(vcmd, '%d', '%P', '%S'),
+                                 textvariable=strvar)
+                        for strvar in self.strvars]
+        for ind, label in enumerate(labels):
+            label.grid(row=ind%10, column=2*int(ind/10), 
+                       sticky='e', padx=(10, 0), pady=5)
+        for ind, entry in enumerate(self.entries):
+            entry.grid(row=ind%10, column=2*int(ind/10)+1,
+                       sticky='w', padx=(0, 10))
 
     def phase(self):
         # tic1 = time.perf_counter()
-        if self.ent_z1.get() != '':
-            z1coef = float(self.ent_z1.get())
-        else:
-            z1coef = 0
-        if self.ent_z2.get() != '':
-            z2coef = float(self.ent_z2.get())
-        else:
-            z2coef = 0
-        if self.ent_z3.get() != '':
-            z3coef = float(self.ent_z3.get())
-        else:
-            z3coef = 0
-        if self.ent_z4.get() != '':
-            z4coef = float(self.ent_z4.get())
-        else:
-            z4coef = 0
-        if self.ent_z5.get() != '':
-            z5coef = float(self.ent_z5.get())
-        else:
-            z5coef = 0
-        if self.ent_z6.get() != '':
-            z6coef = float(self.ent_z6.get())
-        else:
-            z6coef = 0
-        if self.ent_z7.get() != '':
-            z7coef = float(self.ent_z7.get())
-        else:
-            z7coef = 0
-        if self.ent_z8.get() != '':
-            z8coef = float(self.ent_z8.get())
-        else:
-            z8coef = 0
-        if self.ent_z9.get() != '':
-            z9coef = float(self.ent_z9.get())
-        else:
-            z9coef = 0
-        if self.ent_z10.get() != '':
-            z10coef = float(self.ent_z10.get())
-        else:
-            z10coef = 0
-        if self.ent_zsize.get() != '':
-            zsize = float(self.ent_zsize.get())
-        else:
-            zsize = 1
-        if self.ent_zdx.get() != '':
-            zdx = float(self.ent_zdx.get())
-        else:
-            zdx = 0
-        if self.ent_zdy.get() != '':
-            zdy = float(self.ent_zdy.get())
-        else:
-            zdy = 1
-        x = np.linspace(-7.92+zdx, 7.92+zdx, num=792)  # chipsize 15.84*12mm
-        y = np.linspace(-6+zdy, 6+zdy, num=600)
+        coeffs = np.zeros(len(self.entries), dtype=float)
+        coeffs[10] = 1
+        for i, entry in enumerate(self.entries):
+            if entry.get() != '':
+                coeffs[i] = float(entry.get())
+        zsize, zdx, zdy = coeffs[10:]
+        x = np.linspace(-chip_width*500+zdx, chip_width*500+zdx, slm_size[1])
+        y = np.linspace(-chip_height*500+zdy, chip_height*500+zdy, slm_size[0])
         [X, Y] = np.meshgrid(x, y)
         theta = np.arctan(Y/X)
         theta[X < 0] += np.pi
@@ -1030,25 +761,16 @@ class type_zernike(object):
         Rnum = [1, 2, 2, 3, 4, 4, 5, 5, 6, 6]
         mnum = [0, 1, -1, 0, 2, -2, 1, -1, 3, -3]
 
-        if z1coef == 0:
-            p1 = 0
-        else:
-            p1 = z1coef*1*np.cos(0*theta)
-        if z2coef == 0:
-            p2 = 0
-        else:
-            p2 = z2coef*rho*np.cos(1*theta)
-        if z3coef == 0:
-            p3 = 0
-        else:
-            p3 = z3coef*rho*np.sin(1*theta)
-        p4 = z4coef*(2*rho**2-1)*np.cos(0*theta)
-        p5 = z5coef*rho**2*np.cos(2*theta)
-        p6 = z6coef*rho**2*np.sin(2*theta)
-        p7 = z7coef*(3*rho**3-2*rho)*np.cos(1*theta)
-        p8 = z8coef*(3*rho**3-2*rho)*np.sin(1*theta)
-        p9 = z9coef*rho**3*np.cos(3*theta)
-        p10 = z10coef*rho**3*np.sin(3*theta)
+        p1 = coeffs[0]*1*np.cos(0*theta)
+        p2 = coeffs[1]*rho*np.cos(1*theta)
+        p3 = coeffs[2]*rho*np.sin(1*theta)
+        p4 = coeffs[3]*(2*rho**2-1)*np.cos(0*theta)
+        p5 = coeffs[4]*rho**2*np.cos(2*theta)
+        p6 = coeffs[5]*rho**2*np.sin(2*theta)
+        p7 = coeffs[6]*(3*rho**3-2*rho)*np.cos(1*theta)
+        p8 = coeffs[7]*(3*rho**3-2*rho)*np.sin(1*theta)
+        p9 = coeffs[8]*rho**3*np.cos(3*theta)
+        p10 = coeffs[9]*rho**3*np.sin(3*theta)
         # tic4 = time.perf_counter()
         phase = p1+p2+p3+p4+p5+p6+p7+p8+p9+p10
         tic5 = time.perf_counter()
@@ -1056,38 +778,76 @@ class type_zernike(object):
         return phase
 
     def save_(self):
-        dict = {'z1coef': self.ent_z1.get(),
-                'z2coef': self.ent_z2.get(),
-                'z3coef': self.ent_z3.get(),
-                'z4coef': self.ent_z4.get(),
-                'z5coef': self.ent_z5.get(),
-                'z6coef': self.ent_z6.get(),
-                'z7coef': self.ent_z7.get(),
-                'z8coef': self.ent_z8.get(),
-                'z9coef': self.ent_z9.get(),
-                'z10coef': self.ent_z10.get(),
-                'zsize': self.ent_zsize.get(),
-                'zdx': self.ent_zdx.get(),
-                'zdy': self.ent_zdy.get()}
+        dict = {varname: self.entries[i].get() 
+                for i, varname in enumerate(self.varnames)}
         return dict
 
     def load_(self, dict):
-        self.strvar_z1.set(dict['z1coef'])
-        self.strvar_z2.set(dict['z2coef'])
-        self.strvar_z3.set(dict['z3coef'])
-        self.strvar_z4.set(dict['z4coef'])
-        self.strvar_z5.set(dict['z5coef'])
-        self.strvar_z6.set(dict['z6coef'])
-        self.strvar_z7.set(dict['z7coef'])
-        self.strvar_z8.set(dict['z8coef'])
-        self.strvar_z9.set(dict['z9coef'])
-        self.strvar_z10.set(dict['z10coef'])
-        self.strvar_zsize.set(dict['zsize'])
-        self.strvar_zdx.set(dict['zdx'])
-        self.strvar_zdy.set(dict['zdy'])
+        for i, varname in enumerate(self.varnames):
+            self.strvars[i].set(dict[varname])
 
-    def name_(self):
-        return 'Zernike'
 
-    def close_(self):
-        self.frm_.destroy()
+class type_img(type_bg):
+    """shows image settings for phase"""
+
+    def __init__(self, parent):
+        self.name = 'Image'
+        self.frm_ = tk.Frame(parent)
+        self.frm_.grid(row=8, column=0)#, sticky='nsew')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Image')
+        lbl_frm.grid(row=0, column=0, sticky='ew')
+
+        btn_open = tk.Button(lbl_frm, text='Open Phase Profile',
+                             command=self.open_file)
+        self.lbl_file = tk.Label(lbl_frm, text='', wraplength=300, justify='left')
+        btn_open.grid(row=0)
+        self.lbl_file.grid(row=1)
+
+
+class type_hologram(base_type):
+    """shows hologram settings for phase"""
+
+    def __init__(self, parent):
+        self.name = 'Hologram'
+        self.parent = parent
+        self.frm_ = tk.Frame(self.parent)
+        self.frm_.grid(row=0, column=0, sticky='nsew')
+        lbl_frm = tk.LabelFrame(self.frm_, text='Hologram')
+        lbl_frm.grid(row=0, column=0, sticky='ew')
+        self.gen_win = None
+
+        btn_open = tk.Button(lbl_frm, text='Open generated hologram',
+                             command=self.open_file)
+        self.lbl_file = tk.Label(lbl_frm, text='', wraplength=400,
+                                 justify='left', foreground='gray')
+        lbl_act_file = tk.Label(lbl_frm, text='Active Hologram file:', 
+                                justify='left')
+        btn_generate = tk.Button(lbl_frm, text='Launch Hologram Generator',
+                                 command=self.open_generator)
+        
+        btn_open.grid(row=0)
+        lbl_act_file.grid(row=1)
+        self.lbl_file.grid(row=2)
+        btn_generate.grid(row=3)
+
+    def open_generator(self):
+        if self.gen_win is None:
+            self.gen_win = gs.GS_window(self)        
+        
+    def phase(self):
+        if self.lbl_file['text'] != '':
+            phase = self.img
+        else:
+            phase = np.zeros(slm_size)
+        return phase
+
+    def save_(self):
+        dict = {'filepath': self.lbl_file['text']}
+        return dict
+
+    def load_(self, dict):
+        self.lbl_file['text'] = dict['filepath']
+        try:
+            self.img = mpimg.imread(dict['filepath'])
+        except:
+            print('File missing')

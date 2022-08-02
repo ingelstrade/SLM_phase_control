@@ -1,3 +1,4 @@
+from settings import slm_size, bit_depth
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 from matplotlib import pyplot as plt
@@ -17,8 +18,7 @@ class prev_screen(object):
         self.parent = parent
         self.win = tk.Toplevel()
         self.win.title('SLM Phase Control - Preview')
-        def handler(): return self.on_close_prev()
-        btn_close = tk.Button(self.win, text='Close', command=handler)
+        btn_close = tk.Button(self.win, text='Close', command=self.close_prev)
         btn_close.grid(row=1)
         self.fig = Figure(figsize=(5, 4), dpi=100)
         self.ax1 = self.fig.add_subplot(221)
@@ -31,8 +31,8 @@ class prev_screen(object):
         self.update_plots()
 
     def update_plots(self):
-        x = np.linspace(-40, 40, num=792)
-        y = np.linspace(-30, 30, num=600)
+        x = np.linspace(-40, 40, slm_size[1])
+        y = np.linspace(-30, 30, slm_size[0])
         [X, Y] = np.meshgrid(x, y)
 
         x0 = 0  # center
@@ -43,7 +43,7 @@ class prev_screen(object):
         input_intensity = A * np.exp(-res)
         input_intensity[np.sqrt(X**2+Y**2) < 12] = 0
 
-        input_phase = self.parent.get_phase()/255*2*3.1415926535897932384626433
+        input_phase = self.parent.get_phase()/bit_depth*2*np.pi
 
         tmp = abs(np.sqrt(input_intensity))*np.exp(1j*input_phase)
         paddedtmp = np.pad(tmp, 800)
@@ -74,7 +74,7 @@ class prev_screen(object):
 
         self.img1.draw()
 
-    def on_close_prev(self):
+    def close_prev(self):
         plt.close(self.fig)
         self.win.destroy()
         self.parent.prev_win_closed()

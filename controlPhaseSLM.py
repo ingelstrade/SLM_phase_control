@@ -1,3 +1,4 @@
+from settings import SANTEC_SLM, slm_size, bit_depth
 import tkinter as tk
 from tkinter import ttk
 import tkinter.font as tkFont
@@ -7,11 +8,13 @@ import json
 import os
 import phase_settings
 import preview_window
-import publish_window
+if SANTEC_SLM: import santec_driver._slm_py as slm
+else:          import publish_window
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib
 matplotlib.use("TkAgg")
+
 
 
 class main_screen(object):
@@ -39,7 +42,10 @@ class main_screen(object):
             self.main_win,
             text='Control Phase',
             font=tkFont.Font(family='Lucida Grande', size=20))
-        lbl_screen = tk.Label(frm_top, text='SLM screen position:')
+        if SANTEC_SLM:
+            lbl_screen = tk.Label(frm_top, text='SLM display number:')
+        else:
+            lbl_screen = tk.Label(frm_top, text='SLM screen position:')
 
         # Creating buttons
         but_prev = tk.Button(frm_bot, text='Preview', command=self.open_prev)
@@ -49,8 +55,11 @@ class main_screen(object):
         but_load = tk.Button(frm_topb, text='Load Settings', command=self.load)
 
         # Creating entry
-        self.ent_scr = tk.Entry(frm_top, width=15)
-        self.ent_scr.insert(tk.END, '+right+down')
+        if SANTEC_SLM:
+            self.ent_scr = tk.Spinbox(frm_top, width=5, from_=1, to=8)
+        else:
+            self.ent_scr = tk.Entry(frm_top, width=15)
+            self.ent_scr.insert(tk.END, '+right+down')
 
         # Setting up general structure
         lbl_title.grid(row=0, column=0, sticky='ew')
@@ -69,7 +78,7 @@ class main_screen(object):
 
         # Setting up scan and phase figure
         self.scan_options()
-        self.fig = Figure(figsize=(2, 1.5), dpi=100)
+        self.fig = Figure(figsize=(2, 1.5), dpi=130)
         self.ax1 = self.fig.add_subplot(111)
         self.img1 = FigureCanvasTkAgg(self.fig, frm_topb)
         self.tk_widget_fig = self.img1.get_tk_widget()
@@ -97,48 +106,34 @@ class main_screen(object):
         self.load('./last_settings.txt')
 
     def open_prev(self):
-        if self.but_enable_scan['relief'] == 'sunken':
-            if self.strvar_delay.get() != '':
-                delay = float(self.strvar_delay.get())
-            else:
-                delay = 1
-            filelist = self.load_filelist()
-            var = tk.IntVar()
-            for filepath in filelist:
-                if self.var_stop_scan.get():
-                    self.var_stop_scan.set(0)
-                    return
-                root.after(int(delay*1000), var.set, 1)
-                self.load(filepath)
-                if self.prev_win is not None:
-                    self.prev_win.update_plots()
-                else:
-                    self.prev_win = preview_window.prev_screen(self)
-                root.wait_variable(var)
+        if self.prev_win is not None:
+            self.prev_win.update_plots()
         else:
-            if self.prev_win is not None:
-                self.prev_win.update_plots()
-            else:
-                self.prev_win = preview_window.prev_screen(self)
+            self.prev_win = preview_window.prev_screen(self)
 
     def prev_win_closed(self):
         print('prev closed')
         self.prev_win = None
 
     def open_pub(self):
+        self.ent_scr.config(state='disabled')
         phase = self.get_phase()
-        if self.pub_win is not None:
-            self.pub_win.update_img(phase)
-        else:
-            self.pub_win = publish_window.pub_screen(
-                self, self.ent_scr.get(), phase)
+        if SANTEC_SLM: # Santec SLM Dispay routine
+            slm.SLM_Disp_Open(int(self.ent_scr.get()))
+            slm.SLM_Disp_Data(int(self.ent_scr.get()), phase,
+                              slm_size[1], slm_size[0])
+        else: # Hamamatsu SLM Display routine
+            if self.pub_win is not None:
+                self.pub_win.update_img(phase)
+            else:
+                self.pub_win = publish_window.pub_screen(
+                    self, self.ent_scr.get(), phase)
         self.update_phase_plot(phase)
 
     def do_scan(self):
-        if self.strvar_delay.get() != '':
-            delay = float(self.strvar_delay.get())
-        else:
-            delay = 1
+        if self.strvar_delay.get() == '':
+            self.strvar_delay.set('1')
+        delay = float(self.strvar_delay.get())
         filelist = self.load_filelist()
         var = tk.IntVar()
 
@@ -150,42 +145,30 @@ class main_screen(object):
             self.load(filepath)
 
             # keeps to one window and updates for each filepath
-            phase = self.get_phase()
-            if self.pub_win is not None:
-                self.pub_win.update_img(phase)
-            else:
-                self.pub_win = publish_window.pub_screen(
-                    self, self.ent_scr.get(), phase)
+            self.open_pub()
 
-            # updates the phase plot as well
-            self.update_phase_plot(phase)
             self.lbl_time['text'] = delay
             self.countdown()
             root.wait_variable(var)
 
     def countdown(self):
-        tmptime = int(self.lbl_time['text'])
-        tmptime -= 1
-        self.lbl_time['text'] = tmptime
-        if tmptime >= 0:
+        self.lbl_time['text'] = int(self.lbl_time['text']) - 1
+        if int(self.lbl_time['text']):
             self.lbl_time.after(1000, self.countdown)
 
     def pub_win_closed(self):
+        self.ent_scr.config(state='normal')
+        if SANTEC_SLM:
+            slm.SLM_Disp_Close(int(self.ent_scr.get()))
         self.pub_win = None
 
     def setup_box(self, frm_):
         frm_box = tk.LabelFrame(frm_, text='Phases enabled')
         frm_box.grid(column=0)
-        self.types = phase_settings.types()  # reads in  different phase types
+        self.types = phase_settings.types  # reads in  different phase types
         self.vars = []  # init a list holding the variables from the boxes
         self.phase_refs = []  # init a list to hold the references to types
         self.tabs = []  # init a list to hold the tabs
-        self.active_phases = []
-        self.commands = [self.start_stop_0, self.start_stop_1,
-                         self.start_stop_2, self.start_stop_3,
-                         self.start_stop_4, self.start_stop_5,
-                         self.start_stop_6, self.start_stop_7,
-                         self.start_stop_8]
         for ind, typ in enumerate(self.types):
             self.var_ = (tk.IntVar())
             self.vars.append(self.var_)
@@ -195,51 +178,17 @@ class main_screen(object):
                                                            typ))
             self.box_ = tk.Checkbutton(frm_box, text=typ,
                                        variable=self.vars[ind],
-                                       onvalue=1, offvalue=0,
-                                       command=self.commands[ind])
+                                       onvalue=1, offvalue=0)
             self.box_.grid(row=ind, sticky='w')
 
-# It is a bit not so nice, but box commands cant send args. currently able to
-# run 7 different phase types
-    def start_stop_0(self):
-        self.start_stop_t(0)
 
-    def start_stop_1(self):
-        self.start_stop_t(1)
-
-    def start_stop_2(self):
-        self.start_stop_t(2)
-
-    def start_stop_3(self):
-        self.start_stop_t(3)
-
-    def start_stop_4(self):
-        self.start_stop_t(4)
-
-    def start_stop_5(self):
-        self.start_stop_t(5)
-
-    def start_stop_6(self):
-        self.start_stop_t(6)
-
-    def start_stop_7(self):
-        self.start_stop_t(7)
-
-    def start_stop_8(self):
-        self.start_stop_t(8)
-
-    def start_stop_t(self, ind):
-        if self.vars[ind].get() == 1:
-            self.active_phases.append(self.phase_refs[ind])
-        else:
-            self.active_phases.remove(self.phase_refs[ind])
-
-#   gets the phase from the active phase types. 0-2pi is 0-254
     def get_phase(self):
-        phase = np.zeros([600, 792])
-        print(self.active_phases)
-        for phase_types in self.active_phases:
-            phase += phase_types.phase()
+        '''gets the phase from the active phase types'''
+        phase = np.zeros(slm_size)
+        for ind, phase_types in enumerate(self.phase_refs):
+            if self.vars[ind].get() == 1:
+                print(phase_types)
+                phase += phase_types.phase()
         return phase
 
     def save(self, filepath=None):
@@ -270,12 +219,9 @@ class main_screen(object):
             with open(filepath, 'r') as f:
                 dics = json.loads(f.read())
             try:
-                self.active_phases = []
                 for num, phase in enumerate(self.phase_refs):  # loading
                     phase.load_(dics[phase.name_()]['Params'])
                     self.vars[num].set(dics[phase.name_()]['Enabled'])
-                    if dics[phase.name_()]['Enabled'] == 1:
-                        self.active_phases.append(phase)
                 self.ent_scr.delete(0, tk.END)
                 self.ent_scr.insert(0, dics['screen_pos'])
             except ValueError:
@@ -288,32 +234,29 @@ class main_screen(object):
         self.so_frm.grid(row=0, sticky='nsew')
 
         # creating frames
-        frm_scpar = tk.Frame(self.so_frm)
         frm_file = tk.Frame(self.so_frm)
-        frm_load = tk.Frame(self.so_frm)
-        frm_but = tk.Frame(self.so_frm)
 
         # creating labels
-        lbl_scpar = tk.Label(frm_scpar, text='Scan parameter')
-        lbl_val = tk.Label(frm_scpar, text='Value (strt:stop:num)')
+        lbl_scpar = tk.Label(self.so_frm, text='Scan parameter')
+        lbl_val = tk.Label(self.so_frm, text='Value (strt:stop:num)')
         lbl_actf = tk.Label(frm_file, text='Active file:')
-        self.lbl_file = tk.Label(frm_file, text='', wraplength=300,
-                                 justify='left')
+        self.lbl_file = tk.Label(frm_file, text='', wraplength=230,
+                                 justify='left', foreground='gray')
         lbl_delay = tk.Label(
-            frm_load, text='Delay between each phase [s]:')
-        self.lbl_time = tk.Label(self.frm_side, text='0')
+            self.so_frm, text='Delay between each phase [s]:')
+        self.lbl_time = tk.Label(self.so_frm, text='0')
 
         # creating entries
         self.cbx_scpar = ttk.Combobox(
-            frm_scpar, values=['Select'], postcommand=self.scan_params)
+            self.so_frm, values=['Select'], postcommand=self.scan_params)
         self.cbx_scpar.current(0)
         vcmd = (self.frm_side.register(self.callback))
         self.strvar_val = tk.StringVar()
-        ent_val = tk.Entry(frm_scpar,  width=10,  validate='all',
+        ent_val = tk.Entry(self.so_frm,  width=10,  validate='all',
                            validatecommand=(vcmd, '%d', '%P', '%S'),
                            textvariable=self.strvar_val)
         self.strvar_delay = tk.StringVar()
-        ent_delay = tk.Entry(frm_load, width=5, validate='all',
+        ent_delay = tk.Entry(self.so_frm, width=5, validate='all',
                              validatecommand=(vcmd, '%d', '%P', '%S'),
                              textvariable=self.strvar_delay)
 
@@ -325,42 +268,37 @@ class main_screen(object):
             self.so_frm, text='Open existing loading file',
             command=self.open_loadingfile)
         self.but_scan = tk.Button(
-            frm_but, text='Scan', command=self.do_scan)
+            self.so_frm, text='Scan', command=self.do_scan)
         but_stop_scan = tk.Button(
-            frm_but, text='Stop scan', command=self.stop_scan)
+            self.so_frm, text='Stop scan', command=self.stop_scan)
         self.var_stop_scan = tk.IntVar(value=0)
 
         # setup
-        frm_scpar.grid(row=0, sticky='nsew')
-        self.but_crt.grid(row=1, sticky='ew')
-        but_openload.grid(row=2, sticky='ew')
-        frm_file.grid(row=3, sticky='w')
-        frm_load.grid(row=4, sticky='nsew')
-        frm_but.grid(row=5)
+        frm_file.grid(row=3, sticky='w', columnspan=3)
+        self.but_crt.grid(row=2, column=0, sticky='ew')
+        but_openload.grid(row=2, column=1, columnspan=2, sticky='ew')
 
-        self.but_scan.grid(row=0, column=0, padx=5, pady=5)
-        but_stop_scan.grid(row=0, column=1, padx=5, pady=5)
+
+        self.but_scan.grid(row=5, column=0, padx=5, pady=5)
+        but_stop_scan.grid(row=5, column=1, columnspan=2, padx=5, pady=5)
 
         lbl_scpar.grid(row=0, column=0, sticky='e')
         lbl_val.grid(row=1, column=0, sticky='e')
-        self.cbx_scpar.grid(row=0, column=1, sticky='w')
-        ent_val.grid(row=1, column=1, sticky='w')
+        self.cbx_scpar.grid(row=0, column=1, columnspan=2, sticky='w')
+        ent_val.grid(row=1, column=1, columnspan=2, sticky='w')
 
-        lbl_actf.grid(row=0, column=0)
-        self.lbl_file.grid(row=0, column=1)
+        lbl_actf.grid(row=3, column=0)
+        self.lbl_file.grid(row=3, column=1)
 
-        lbl_delay.grid(row=0, column=0, sticky='e')
-        ent_delay.grid(row=0, column=1, sticky='w')
+        lbl_delay.grid(row=4, column=0, sticky='e')
+        ent_delay.grid(row=4, column=1, columnspan=2, sticky='w')
+        self.lbl_time.grid(row=4, column=2, sticky='w')
 
     def callback(self, action, P, text):
         # action=1 -> insert
         if(action == '1'):
             if text in '0123456789.-+:':
-                #    try:
-                #        float(P)
                 return True
-            #    except ValueError:
-            #        return False
             else:
                 return False
         else:
@@ -368,10 +306,11 @@ class main_screen(object):
 
     def scan_params(self):
         scparams = []
-        for phase in self.active_phases:
-            phparam = phase.save_()
-            for param in phparam.keys():
-                scparams.append(phase.name_() + ':' + param)
+        for ind, phase in enumerate(self.phase_refs):
+            if self.vars[ind].get() == 1:
+                phparam = phase.save_()
+                for param in phparam.keys():
+                    scparams.append(phase.name_() + ':' + param)
         self.cbx_scpar['values'] = scparams
         return
 
@@ -468,12 +407,13 @@ class main_screen(object):
 
     def update_phase_plot(self, phase):
         self.ax1.clear()
-        self.ax1.imshow(phase % 256)
-        # self.ax1.set_title('Phase')
+        self.ax1.imshow(phase % (bit_depth+1), cmap='twilight',
+                        interpolation='None')
         self.img1.draw()
 
     def exit_prog(self):
         self.save('./last_settings.txt')
+        self.pub_win_closed()
         self.main_win.destroy()
 
 
