@@ -8,7 +8,7 @@ import json
 import os
 import phase_settings
 import preview_window
-if SANTEC_SLM: import _slm_py as slm
+if SANTEC_SLM: import santec_driver._slm_py as slm
 else:          import publish_window
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg

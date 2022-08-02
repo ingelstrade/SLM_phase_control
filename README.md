@@ -8,6 +8,12 @@ Some settings (the wavelength used in the lab and the SLM type used) still need 
 These can be found and changed in the file "settings.py".
 
 
+## Structure
+
+"background" contains the wavefront correction images for the SLMs provided by their manufacturer.
+
+"santec_driver" contains drivers to communicate with the Santec-SLMs.
+
 
 ### Updates
 

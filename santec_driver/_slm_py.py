@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 import ctypes as ct
-import _slm_win as dll
+import santec_driver._slm_win as dll
 import numpy as np
 import warnings
 from os.path import exists
