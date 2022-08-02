@@ -75,6 +75,5 @@ class prev_screen(object):
         self.img1.draw()
 
     def close_prev(self):
-        plt.close(self.fig)
         self.win.destroy()
         self.parent.prev_win_closed()

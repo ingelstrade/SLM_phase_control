@@ -1,4 +1,4 @@
-from settings import slm_size, wavelength, chip_width, chip_height, pixel_size
+from settings import slm_size, wavelength, chip_width, chip_height, pixel_size, bit_depth
 import numpy as np
 import tkinter as tk
 from matplotlib import pyplot as plt
@@ -92,6 +92,7 @@ class GS_window(object):
                               textvariable=self.strvar_f)
         lbl_algorithm = tk.Label(frm_set, text='Algorithm')
         self.cbx_alg = tk.ttk.Combobox(frm_set, values=list(algorithms.keys()))
+        self.cbx_alg.current(0)
         lbl_it = tk.Label(frm_set, text='number of iterations:')
         self.ent_it = tk.Spinbox(frm_set, width=5, from_=1, to=maxit)
         lbl_d.grid(row=0, column=0, sticky='e')
@@ -120,6 +121,7 @@ class GS_window(object):
         self.frm_gen = tk.LabelFrame(self.win, text='Generate hologram image')
         lbl_algorithm = tk.Label(self.frm_gen, text='Algorithm')
         self.cbx_shape = tk.ttk.Combobox(self.frm_gen, values=list(shapes.keys()))
+        self.cbx_shape.current(0)
         lbl_algorithm.grid(row=0, column=0, sticky='e')
         self.cbx_shape.grid(row=0, column=1, sticky='w')
         self.btn_gen = tk.Button(self.frm_gen, text='Generate image',
@@ -148,7 +150,7 @@ class GS_window(object):
     def render_image_generator(self):
         # may later be called by each change of self.cbx_shape
         self.varnames = ['r', 'dx', 'dy']
-        lbl_texts = ['r [mm]:', 'dx [mm]:', 'dy [mm]:']
+        lbl_texts = ['r [px]:', 'dx [px]:', 'dy [px]:']
         self.labels = [tk.Label(self.frm_gen, text=lbl_text) for lbl_text in lbl_texts]
         self.strvars = [tk.StringVar() for lbl_text in lbl_texts]
         self.entries = [tk.Entry(self.frm_gen, width=11,  validate='all',
@@ -177,32 +179,51 @@ class GS_window(object):
         self.tk_widget_fig = self.img1.get_tk_widget()
         
     def open_file(self):
-            filepath = tk.filedialog.askopenfilename(
-                filetypes=[('CSV data arrays', '*.csv'), ('Image Files', '*.bmp'), 
-                           ('All Files', '*.*')]
-            )
-            if not filepath:
-                return
-            if filepath[-4:] == '.csv':
-                self.img = np.loadtxt(filepath, delimiter=',')
-            else:
-                self.img = image.imread(filepath)
-            self.lbl_file['text'] = f'{filepath}'
+        filepath = tk.filedialog.askopenfilename(
+            filetypes=[('CSV data arrays', '*.csv'), ('Image Files', '*.bmp'), 
+                       ('All Files', '*.*')]
+        )
+        if not filepath:
+            return
+        if filepath[-4:] == '.csv':
+            self.img = np.loadtxt(filepath, delimiter=',')
+        else:
+            self.img = image.imread(filepath)
+        self.lbl_file['text'] = f'{filepath}'
+        
+        self.ax1.imshow(self.img, cmap='magma', interpolation='None')
+        self.img1.draw()
     
     def generate_image(self):
-        # TODO!
-        pass
+        function = self.cbx_shape.get()
+        coeffs = np.zeros(len(self.entries), dtype=float)
+        coeffs[0] = 1
+        for i, entry in enumerate(self.entries):
+            if entry.get() != '':
+                coeffs[i] = float(entry.get())
+        
+        self.img = shapes[function](*coeffs)
+        self.ax1.imshow(self.img, cmap='magma', interpolation='None')
+        self.img1.draw()
     
     def calculate_phase(self):
-        # TODO!
-        pass
+        function = self.cbx_alg.get()
+        iterations = int(self.ent_it.get())
+        A, self.pattern = algorithms[function](self.img, iterations)
+        f_slm = abs(A)*np.exp(1j*self.pattern)
+        fft = np.fft.fftshift(np.fft.fft2(f_slm))
+        # TODO: better calculation of generated focus including propagation lengths
+        
+        self.ax2.imshow(self.pattern, cmap='twilight', interpolation='None')
+        self.ax3.imshow(np.abs(fft), cmap='magma', interpolation='None')
+        self.ax4.imshow(np.angle(fft), cmap='twilight', interpolation='None')
+        self.img1.draw()
         
     def take_pattern(self):
-        # TODO!
-        pass
+        self.parent.img = self.pattern / (2*np.pi) * bit_depth
+        #self.close_GS()
 
     def close_GS(self):
-        #plt.close(self.fig)
         self.win.destroy()
         self.parent.gen_win = None
 

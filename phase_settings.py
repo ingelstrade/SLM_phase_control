@@ -815,6 +815,7 @@ class type_hologram(base_type):
         lbl_frm = tk.LabelFrame(self.frm_, text='Hologram')
         lbl_frm.grid(row=0, column=0, sticky='ew')
         self.gen_win = None
+        self.img = None
 
         btn_open = tk.Button(lbl_frm, text='Open generated hologram',
                              command=self.open_file)
@@ -835,7 +836,7 @@ class type_hologram(base_type):
             self.gen_win = gs.GS_window(self)        
         
     def phase(self):
-        if self.lbl_file['text'] != '':
+        if self.img is not None:
             phase = self.img
         else:
             phase = np.zeros(slm_size)
