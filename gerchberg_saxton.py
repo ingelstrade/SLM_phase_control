@@ -1,4 +1,5 @@
 from settings import slm_size, wavelength, chip_width, chip_height, pixel_size, bit_depth
+import os
 import numpy as np
 import tkinter as tk
 from matplotlib import pyplot as plt
@@ -198,10 +199,12 @@ class GS_window(object):
             self.img = image.imread(filepath)
         self.lbl_file['text'] = f'{filepath}'
         
-        self.ax1.imshow(self.img, cmap='magma', interpolation='None')
+        self.ax1.imshow(self.img, cmap='magma', interpolation='None',
+                        extent = extent_img)
         self.img1.draw()
     
     def generate_image(self):
+        # get image type and parameters out of entries
         function = self.cbx_shape.get()
         coeffs = np.zeros(len(self.entries), dtype=float)
         coeffs[0] = 1
@@ -209,7 +212,21 @@ class GS_window(object):
             if entry.get() != '':
                 coeffs[i] = float(entry.get())
         
+        # organize directory and filename to save the image to
+        cwd = os.getcwd()
+        print('cwd is {}'.format(cwd))
+        filepath = cwd + '\\SLM_hologram_files'
+        if not os.path.exists(filepath):
+            os.mkdir(filepath)
+        filepath += '\\' + function.replace(' ', '_')
+        for i, coeff in enumerate(coeffs):
+            filepath += '_' + self.varnames[i] + '=' + str(coeff)
+        filepath += '.csv'
+        
+        # generate, save and display image
         self.img = shapes[function](*coeffs)
+        np.savetxt(filepath, self.img, delimiter=',')
+        self.lbl_file['text'] = f'{filepath}'
         self.ax1.imshow(self.img, cmap='magma', interpolation='None',
                         extent = extent_img)
         self.img1.draw()
@@ -232,6 +249,9 @@ class GS_window(object):
         
     def take_pattern(self):
         self.parent.img = self.pattern / (2*np.pi) * bit_depth
+        filepath = self.lbl_file['text'][:-4] + 'pattern.csv' 
+        np.savetxt(filepath, self.parent.img, delimiter=',')
+        self.parent.lbl_file['text'] = filepath
         #self.close_GS()
 
     def close_GS(self):

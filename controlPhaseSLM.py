@@ -333,7 +333,7 @@ class main_screen(object):
         print(f'{strt}_{stop}_{num}')
 
         cwd = os.getcwd()
-        print('current cwd is {}'.format(cwd))
+        print('cwd is {}'.format(cwd))
         dirstr = '\\SLM_phase_scan_files'
         if not os.path.exists(cwd + dirstr):
             os.mkdir(cwd + dirstr)
