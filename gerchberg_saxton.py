@@ -14,35 +14,40 @@ distance = 500e-3
 # coordinates in the SLM plane
 x_slm = np.linspace(-chip_width/2, chip_width/2, slm_size[1])
 y_slm = np.linspace(-chip_height/2, chip_height/2, slm_size[0])
+extent_slm = [x_slm[0]*1e3, x_slm[-1]*1e3, y_slm[0]*1e3, y_slm[-1]*1e3]
 
 # coordinates in the image plane
 x_img = np.fft.fftshift(np.fft.fftfreq(slm_size[1], 
                                        pixel_size/(wavelength*focal_length)))
 y_img = np.fft.fftshift(np.fft.fftfreq(slm_size[0], 
                                        pixel_size/(wavelength*focal_length)))
+extent_img = [x_img[0]*1e3,x_img[-1]*1e3,y_img[0]*1e3,y_img[-1]*1e3]
 
 
-def gaussian(sigma, mu_x=slm_size[1]/2, mu_y=slm_size[0]/2):
-    X = np.arange(slm_size[1])
-    Y = np.arange(slm_size[0])
+def gaussian(sigma, mu_x=0, mu_y=0):
+    X = np.arange(slm_size[1]) - slm_size[1]/2
+    Y = np.arange(slm_size[0]) - slm_size[0]/2
     x, y = np.meshgrid(X,Y)
     return np.exp(-1/2 * (((x-mu_x)**2+(y-mu_y)**2)/sigma**2))
 
-def flat_top(r, dx=slm_size[1]/2, dy=slm_size[0]/2):
-    X = np.arange(slm_size[1])
-    Y = np.arange(slm_size[0])
+def flat_top(r, dx=0, dy=0):
+    X = np.arange(slm_size[1]) - slm_size[1]/2
+    Y = np.arange(slm_size[0]) - slm_size[0]/2
     x, y = np.meshgrid(X,Y)
     return np.where((x-dx)**2+(y-dy)**2 < r**2, 1, 0)
 
 shapes = {'2D Gaussian': gaussian, 'flat-top circle': flat_top}
 
 
-def GS_algorithm(hologram, iterations):
+def GS_algorithm(hologram, iterations, caller=None):
     
     # initial guess for the phase 
     phi = np.random.rand(*slm_size) * 2 * np.pi - np.pi
     
     for i in range(iterations):
+        if caller is not None:
+            caller.progress['value'] = i / iterations * 100
+            caller.frm_calc.update_idletasks()
     
         # restore SLM-plane intensity
         A = np.ones(slm_size)
@@ -132,9 +137,11 @@ class GS_window(object):
         self.frm_calc = tk.LabelFrame(self.win, text='Phase pattern generator algorithm')
         self.btn_gen = tk.Button(self.frm_calc, text='Calculate phase',
                                  command=self.calculate_phase)
+        self.progress = tk.ttk.Progressbar(self.frm_calc, length=200)
         self.prepare_figure()
-        self.btn_gen.grid(row=0)
-        self.tk_widget_fig.grid(row=1, sticky='nsew', pady=5)
+        self.btn_gen.grid(row=0, column=0, pady=5)
+        self.progress.grid(row=0, column=1, pady=5)
+        self.tk_widget_fig.grid(row=1, columnspan=2, sticky='nsew', pady=5)
 
         # Main layout
         btn_ok = tk.Button(self.win, text='OK', command=self.take_pattern)
@@ -203,20 +210,24 @@ class GS_window(object):
                 coeffs[i] = float(entry.get())
         
         self.img = shapes[function](*coeffs)
-        self.ax1.imshow(self.img, cmap='magma', interpolation='None')
+        self.ax1.imshow(self.img, cmap='magma', interpolation='None',
+                        extent = extent_img)
         self.img1.draw()
     
     def calculate_phase(self):
         function = self.cbx_alg.get()
         iterations = int(self.ent_it.get())
-        A, self.pattern = algorithms[function](self.img, iterations)
+        A, self.pattern = algorithms[function](self.img, iterations, self)
         f_slm = abs(A)*np.exp(1j*self.pattern)
         fft = np.fft.fftshift(np.fft.fft2(f_slm))
         # TODO: better calculation of generated focus including propagation lengths
         
-        self.ax2.imshow(self.pattern, cmap='twilight', interpolation='None')
-        self.ax3.imshow(np.abs(fft), cmap='magma', interpolation='None')
-        self.ax4.imshow(np.angle(fft), cmap='twilight', interpolation='None')
+        self.ax2.imshow(self.pattern, cmap='twilight', interpolation='None',
+                        extent = extent_slm)
+        self.ax3.imshow(np.abs(fft), cmap='magma', interpolation='None',
+                        extent = extent_img)
+        self.ax4.imshow(np.angle(fft), cmap='twilight', interpolation='None',
+                        extent = extent_img)
         self.img1.draw()
         
     def take_pattern(self):
@@ -237,15 +248,13 @@ if __name__ == '__main__':
     
     fft = np.fft.fftshift(np.fft.fft2(f_slm))
     
-    plt.imshow(phi, cmap='twilight', interpolation='None',
-               extent=[x_slm[0]*1e3,x_slm[-1]*1e3,y_slm[0]*1e3,y_slm[-1]*1e3])
+    plt.imshow(phi, cmap='twilight', interpolation='None', extent=extent_slm)
     plt.xlabel('[mm]')
     plt.ylabel('[mm]')
     plt.colorbar(label='phase [rad]')
     plt.show()
     
-    plt.imshow(np.abs(fft), cmap='inferno',
-               extent=[x_img[0]*1e3,x_img[-1]*1e3,y_img[0]*1e3,y_img[-1]*1e3])
+    plt.imshow(np.abs(fft), cmap='inferno', extent=extent_img)
     plt.xlabel('[mm]')
     plt.ylabel('[mm]')
     plt.colorbar()
