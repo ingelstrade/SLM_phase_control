@@ -53,6 +53,8 @@ class base_type(object):
             self.img = np.loadtxt(filepath, delimiter=',')
         else:
             self.img = mpimg.imread(filepath)
+            if len(self.img.shape) == 3: # multi color image
+                self.img = self.img.sum(axis=2)
         self.lbl_file['text'] = f'{filepath}'
     
     def callback(self, action, P, text):
@@ -108,6 +110,8 @@ class type_bg(base_type):
         self.lbl_file['text'] = dict['filepath']
         try:
             self.img = mpimg.imread(dict['filepath'])
+            if len(self.img.shape) == 3: # multi color image
+                self.img = self.img.sum(axis=2)
         except:
             print('File missing')
 
@@ -850,5 +854,7 @@ class type_hologram(base_type):
         self.lbl_file['text'] = dict['filepath']
         try:
             self.img = mpimg.imread(dict['filepath'])
+            if len(self.img.shape) == 3: # multi color image
+                self.img = self.img.sum(axis=2)
         except:
             print('File missing')

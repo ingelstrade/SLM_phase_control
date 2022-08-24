@@ -197,6 +197,8 @@ class GS_window(object):
             self.img = np.loadtxt(filepath, delimiter=',')
         else:
             self.img = image.imread(filepath)
+            if len(self.img.shape) == 3: # multi color image
+                self.img = self.img.sum(axis=2)
         self.lbl_file['text'] = f'{filepath}'
         
         self.ax1.imshow(self.img, cmap='magma', interpolation='None',
