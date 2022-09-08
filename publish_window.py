@@ -9,6 +9,7 @@ class pub_screen(object):
 
     def __init__(self, parent, position, phase):
         self.parent = parent
+        self.phase = phase
         self.win = tk.Toplevel()
         try:
             self.win.geometry('792x600' + position)
@@ -24,12 +25,16 @@ class pub_screen(object):
         im = ImageTk.PhotoImage(img)
         self.lbl_img = tk.Label(self.win, image=im)
         self.lbl_img.image = im
-        # self.lbl_img.grid()
         self.lbl_img.pack(fill='both', side=tk.TOP, expand=1)
         with open('./new_phase.txt', 'w') as f:
             f.write('new')
 
     def update_img(self, phase):
+        """For controlPhaseSLM which results in saving the phase"""
+        self.phase = phase #saving the phase
+        self.publish_img(phase)
+
+    def publish_img(self, phase):
         img = Image.fromarray(np.uint8((phase % 256)/255*210))
         img.save('./phase.bmp')
         im = ImageTk.PhotoImage(img)

@@ -10,6 +10,7 @@ import phase_settings
 import preview_window
 if SANTEC_SLM: import santec_driver._slm_py as slm
 else:          import publish_window
+import feedbacker
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib
@@ -48,6 +49,7 @@ class main_screen(object):
             lbl_screen = tk.Label(frm_top, text='SLM screen position:')
 
         # Creating buttons
+        but_fbck = tk.Button(frm_bot, text='Feedbacker', command=self.open_fbck)
         but_prev = tk.Button(frm_bot, text='Preview', command=self.open_prev)
         but_pub = tk.Button(frm_bot, text='Publish', command=self.open_pub)
         but_exit = tk.Button(frm_bot, text='EXIT', command=self.exit_prog)
@@ -88,9 +90,10 @@ class main_screen(object):
         self.ax1.axes.yaxis.set_visible(False)
 
         # Setting up bot frame
-        but_prev.grid(row=0, column=0, padx=10, pady=5, ipadx=5)
-        but_pub.grid(row=0, column=1, pady=5, ipadx=5)
-        but_exit.grid(row=0, column=2, padx=10, pady=5, ipadx=5)
+        but_fbck.grid(row=0, column=0, padx=5, ipadx=5)
+        but_prev.grid(row=0, column=1, padx=5, pady=5, ipadx=5)
+        but_pub.grid(row=0, column=2, pady=5, ipadx=5)
+        but_exit.grid(row=0, column=3, padx=10, pady=5, ipadx=5)
 
         # binding keys
         def lefthandler(event): return self.left_arrow()
@@ -104,6 +107,9 @@ class main_screen(object):
 
         # loading last settings
         self.load('./last_settings.txt')
+
+    def open_fbck(self):
+        self.fbcker = feedbacker.feedbacker(self.pub_win)
 
     def open_prev(self):
         if self.prev_win is not None:
