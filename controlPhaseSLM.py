@@ -122,6 +122,7 @@ class main_screen(object):
         self.ent_scr.config(state='disabled')
         phase = self.get_phase()
         if SANTEC_SLM: # Santec SLM Dispay routine
+            self.pub_win = int(self.ent_scr.get())
             slm.SLM_Disp_Open(int(self.ent_scr.get()))
             slm.SLM_Disp_Data(int(self.ent_scr.get()), phase,
                               slm_size[1], slm_size[0])
@@ -403,12 +404,14 @@ class main_screen(object):
             self.main_win.after(500, self.main_win.focus_force)
 
     def down_arrow(self):
+        print('s pressed')
         if self.vars[2].get() == 1:
             self.phase_refs[2].down_()
             self.open_pub()
             self.main_win.after(500, self.main_win.focus_force)
     
     def escape_key(self):
+        print('esc pressed')
         if self.pub_win is not None:
             q_str = 'Do you want to close the SLM Publication Window?\nThe SLM screen will instead show the desktop background.'
             result = tkMbox.askquestion('Close Publication Window', q_str)
@@ -416,6 +419,8 @@ class main_screen(object):
                 if not SANTEC_SLM:
                     self.pub_win.win.destroy()
                 self.pub_win_closed()
+                self.ax1.clear()
+                self.img1.draw()
 
     def update_phase_plot(self, phase):
         self.ax1.clear()
