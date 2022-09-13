@@ -42,19 +42,29 @@ def new_type(frm_mid, typ):
 class base_type(object):
     '''base class for all type_phase classes'''
     
+    def _read_file(self, filepath):
+        if not filepath:
+            return
+        try:
+            if filepath[-4:] == '.csv':
+                try:
+                    self.img = np.loadtxt(filepath, delimiter=',',skiprows=1,
+                                          usecols=np.arange(1920)+1)
+                except:
+                    np.loadtxt(filepath, delimiter=',')
+            else:
+                self.img = mpimg.imread(filepath)
+                if len(self.img.shape) == 3: # multi color image
+                    self.img = self.img.sum(axis=2)
+        except:
+            print('File "' + filepath + '" not found')
+        
     def open_file(self):
         filepath = askopenfilename(
             filetypes=[('CSV data arrays', '*.csv'), ('Image Files', '*.bmp'), 
                        ('All Files', '*.*')]
         )
-        if not filepath:
-            return
-        if filepath[-4:] == '.csv':
-            self.img = np.loadtxt(filepath, delimiter=',')
-        else:
-            self.img = mpimg.imread(filepath)
-            if len(self.img.shape) == 3: # multi color image
-                self.img = self.img.sum(axis=2)
+        self._read_file(filepath)
         self.lbl_file['text'] = f'{filepath}'
     
     def callback(self, action, P, text):
@@ -108,12 +118,7 @@ class type_bg(base_type):
 
     def load_(self, dict):
         self.lbl_file['text'] = dict['filepath']
-        try:
-            self.img = mpimg.imread(dict['filepath'])
-            if len(self.img.shape) == 3: # multi color image
-                self.img = self.img.sum(axis=2)
-        except:
-            print('File missing')
+        self._read_file(dict['filepath'])
 
 
 class type_flat(base_type):
@@ -852,9 +857,4 @@ class type_hologram(base_type):
 
     def load_(self, dict):
         self.lbl_file['text'] = dict['filepath']
-        try:
-            self.img = mpimg.imread(dict['filepath'])
-            if len(self.img.shape) == 3: # multi color image
-                self.img = self.img.sum(axis=2)
-        except:
-            print('File missing')
+        self._read_file(dict['filepath'])
