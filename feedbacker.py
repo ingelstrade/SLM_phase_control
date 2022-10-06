@@ -7,9 +7,14 @@ from matplotlib import pyplot as plt
 import matplotlib
 matplotlib.use("TkAgg")
 import gxipy as gx
-from PIL import Image
+from PIL import Image, ImageTk
 import time
 import draw_polygon
+from skimage.draw import polygon
+from simple_pid import PID
+import threading
+from pynput import keyboard
+
 
 
 class feedbacker(object):
@@ -18,21 +23,24 @@ class feedbacker(object):
     def __init__(self, pub_win):
         self.pub_win = pub_win
         self.win = tk.Toplevel()
-        self.win.geometry('500x470+300+100')
+        self.win.geometry('500x950+300+100')
 
         # creating frames
         frm_cam = tk.Frame(self.win)
         frm_bot = tk.Frame(self.win)
         frm_cam_but = tk.Frame(frm_cam)
         frm_cam_but_set = tk.Frame(frm_cam_but)
+        frm_pid = tk.Frame(frm_bot)
+        frm_mid = tk.Frame(self.win)
+        frm_ratio = tk.Frame(frm_mid)
 
         # creating buttons n labels
         but_exit = tk.Button(frm_bot, text='EXIT', command=self.on_close)
         but_feedback = tk.Button(frm_bot, text='Feedback', command=self.feedback)
         but_cam_img = tk.Button(frm_cam_but, text='Get image', command=self.cam_img)
-        but_cam_line = tk.Button(frm_cam_but, text='Get cont images', command=self.cam_cont_img)
+        but_cam_line = tk.Button(frm_cam_but, text='Plot fft', command=self.plot_fft)
         self.bVar_cam = tk.BooleanVar(self.win,True)
-        but_cam_phi = tk.Button(frm_cam_but, text='Get phase', command=self.bVar_cam==False)
+        but_cam_phi = tk.Button(frm_cam_but, text='Scan 2pi', command=self.fast_scan)
         lbl_phi = tk.Label(frm_bot, text='Phase shift (in pi):')
         vcmd = (self.win.register(self.callback))
         self.strvar_flat = tk.StringVar()
@@ -41,7 +49,7 @@ class feedbacker(object):
             validatecommand=(vcmd, '%d', '%P', '%S'),
             textvariable=self.strvar_flat)
         lbl_cam_ind = tk.Label(frm_cam_but_set, text='Camera index:')
-        self.strvar_cam_ind = tk.StringVar(self.win,'1')
+        self.strvar_cam_ind = tk.StringVar(self.win,'2')
         self.ent_cam_ind = tk.Entry(
             frm_cam_but_set, width=11,  validate='all',
             validatecommand=(vcmd, '%d', '%P', '%S'),
@@ -53,18 +61,50 @@ class feedbacker(object):
             validatecommand=(vcmd, '%d', '%P', '%S'),
             textvariable=self.strvar_cam_exp)
         lbl_cam_gain = tk.Label(frm_cam_but_set, text='Camera gain (0-24):')
-        self.strvar_cam_gain = tk.StringVar(self.win,'0')
+        self.strvar_cam_gain = tk.StringVar(self.win,'20')
         self.ent_cam_gain = tk.Entry(
             frm_cam_but_set, width=11,  validate='all',
             validatecommand=(vcmd, '%d', '%P', '%S'),
             textvariable=self.strvar_cam_gain)
-        but_area1 = tk.Button(frm_bot, text='Select area1', command=self.set_area1)
-        but_area2 = tk.Button(frm_bot, text='Select area2', command=self.set_area2)
+        self.strvar_indexfft = tk.StringVar(self.win,'8')
+        lbl_indexfft = tk.Label(frm_ratio, text='Index fft:')
+        lbl_angle = tk.Label(frm_ratio, text='Phase:')
+        self.ent_indexfft = tk.Entry(
+            frm_ratio, width=11,
+            textvariable=self.strvar_indexfft)
+        self.lbl_angle = tk.Label(frm_ratio, text='angle')
+        self.strvar_area1x = tk.StringVar(self.win,'255, 420')
+        self.ent_area1x = tk.Entry(
+            frm_ratio, width=11,
+            textvariable=self.strvar_area1x)
+        self.strvar_area1y = tk.StringVar(self.win,'470, 480')
+        self.ent_area1y = tk.Entry(
+            frm_ratio, width=11,
+            textvariable=self.strvar_area1y)
+        lbl_pidp = tk.Label(frm_pid, text='P-value:')
+        self.strvar_pidp = tk.StringVar(self.win,'1')
+        self.ent_pidp = tk.Entry(
+            frm_pid, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_pidp)
+        lbl_pidi = tk.Label(frm_pid, text='i-value:')
+        self.strvar_pidi = tk.StringVar(self.win,'0')
+        self.ent_pidi = tk.Entry(
+            frm_pid, width=11,  validate='all',
+            validatecommand=(vcmd, '%d', '%P', '%S'),
+            textvariable=self.strvar_pidi)
+        but_pid_setp = tk.Button(frm_pid, text='Setpoint', command=self.set_setpoint)
+        but_pid_enbl = tk.Button(frm_pid, text='Start PID', command=self.enbl_pid)
+        but_pid_stop = tk.Button(frm_pid, text='Stop PID', command=self.pid_stop)
+        but_pid_setk = tk.Button(frm_pid, text='Set PID values', command=self.set_pid_val)
+
 
         # setting up
         frm_cam.grid(row=0, column=0, sticky='nsew')
-        frm_bot.grid(row=1, column=0, sticky='nsew')
+        frm_mid.grid(row=1, column=0, sticky='nsew')
+        frm_bot.grid(row=2, column=0, sticky='nsew')
         frm_cam_but.grid(row=1, column=0, sticky='nsew')
+
 
         # setting up buttons frm_cam
         but_cam_img.grid(row=0, column=0, padx=5, pady=5, ipadx=5, ipady=5)
@@ -83,17 +123,67 @@ class feedbacker(object):
         self.ent_flat.grid(row=0, column=1, sticky='w', padx=(0, 10))
         but_exit.grid(row=1, column=0, padx=5, pady=5, ipadx=5, ipady=5)
         but_feedback.grid(row=1, column=1, padx=5, pady=5, ipadx=5, ipady=5)
-        but_area1.grid(row=0, column=2)
-        but_area2.grid(row=1, column=2)
+        frm_pid.grid(row=5, column=0)
 
-        # setting up canvas
-        self.fig = Figure(figsize=(4, 3), dpi=100)
-        self.ax1 = self.fig.add_subplot(111)
-        self.img1 = FigureCanvasTkAgg(self.fig, frm_cam)
-        self.tk_widget_fig = self.img1.get_tk_widget()
-        self.tk_widget_fig.grid(row=0, sticky='nsew')
+        #setting up frm_pid
+        lbl_pidp.grid(row=0, column=0)
+        lbl_pidi.grid(row=1, column=0)
+        self.ent_pidp.grid(row=0, column=1)
+        self.ent_pidi.grid(row=1, column=1)
+        but_pid_setp.grid(row=2, column=0)
+        but_pid_enbl.grid(row=2, column=2)
+        but_pid_setk.grid(row=2, column=1)
+        but_pid_stop.grid(row=2, column=3)
+
+        # setting up cam image
+        self.ImageLabel = tk.Label(frm_cam, bg = "#4682B4")
+        self.ImageLabel.grid(row=0, sticky='nsew')
+
+        #setting up frm_mid
+        self.figr = Figure(figsize=(5, 2), dpi=100)
+        self.ax1r = self.figr.add_subplot(211)
+        self.ax2r = self.figr.add_subplot(212)
+        self.img1r = FigureCanvasTkAgg(self.figr, frm_mid)
+        self.tk_widget_figr = self.img1r.get_tk_widget()
+        self.tk_widget_figr.grid(row=0, column=0, sticky='nsew')
+        self.figp = Figure(figsize=(5, 2), dpi=100)
+        self.ax1p = self.figp.add_subplot(111)
+        self.img1p = FigureCanvasTkAgg(self.figp, frm_mid)
+        self.tk_widget_figp = self.img1p.get_tk_widget()
+        self.tk_widget_figp.grid(row=1, column=0, sticky='nsew')
+        frm_ratio.grid(row=2, column=0, sticky='nsew')
+
+        #setting up frm_ratio
+        lbl_indexfft.grid(row=0, column=0)
+        lbl_angle.grid(row=1, column=0)
+        self.ent_indexfft.grid(row=0, column=1)
+        self.lbl_angle.grid(row=1, column=1)
+        self.ent_area1x.grid(row=3, column=0)
+        self.ent_area1y.grid(row=3, column=1)
+
+        self.im_phase = np.zeros(1000)
+        self.pid = PID(0.35, 0, 0, setpoint=0)
+
+        #setting up a listener for catchin esc from cam1
+        global stop_cam
+        stop_cam = 0
+        global stop_pid
+        stop_pid = False
+        l = keyboard.Listener(on_press=self.press_callback)
+        l.start()
+
+    def press_callback(self, key):
+
+        if key == keyboard.Key.esc:
+            def stop_loop():
+                global stop_cam
+                stop_cam = 1
+                return stop_cam
+            print('Get Out')
+            stop_cam = stop_loop()
 
 
+        return stop_cam
 
     def callback(self, action, P, text):
         # action=1 -> insert
@@ -114,9 +204,9 @@ class feedbacker(object):
             phi = float(self.ent_flat.get())
         else:
             phi = 0
-        self.pub_win.publish_img(self.pub_win.phase + phi*255)
+        self.pub_win.publish_img(self.pub_win.phase + phi/2*255)
 
-    def init_cam(self, single):
+    def init_cam(self):
         print("")
         print("Initializing......")
         print("")
@@ -129,7 +219,6 @@ class feedbacker(object):
 
         # open the first device
         cam1 = device_manager.open_device_by_index(int(self.ent_cam_ind.get()))
-        self.camdev = cam1
 
         # set exposure
         cam1.ExposureTime.set(float(self.ent_cam_exp.get()))
@@ -145,15 +234,16 @@ class feedbacker(object):
             cam1.TriggerMode.set(gx.GxSwitchEntry.ON)
             cam1.TriggerSource.set(gx.GxTriggerSourceEntry.SOFTWARE)
 
+
         # start data acquisition
         cam1.stream_on()
-
+        single = False
         if single:
-            self.acq_mono(self.camdev, 1)
-            self.cam_on_close(self.camdev)
+            self.acq_mono(cam1, 1)
+            self.cam_on_close(cam1)
         else:
-            self.acq_mono(self.camdev, 60)
-            self.cam_on_close(self.camdev)
+            self.acq_mono(cam1, 10000)
+            self.cam_on_close(cam1)
 
     def acq_mono(self, device, num):
         """
@@ -162,7 +252,7 @@ class feedbacker(object):
                :param      num:        number of acquisition images[int]
         """
         for i in range(num):
-            time.sleep(0.01)
+            time.sleep(0.001)
 
             # send software trigger command
             device.TriggerSoftware.send_command()
@@ -178,16 +268,45 @@ class feedbacker(object):
             if numpy_image is None:
                 continue
 
-            # show acquired image
-            # img = Image.fromarray(numpy_image, 'L')
-            # img.show()
-            self.ax1.clear()
-            self.ax1.imshow(numpy_image)
-            self.img1.draw()
+            # # sum to area1
+            try:
+                xpoints1 = np.fromstring(self.ent_area1x.get(), sep=',')
+                ypoints1 = np.fromstring(self.ent_area1y.get(), sep=',')
+            except:
+                xpoints1 = [200, 550]
+                ypoints1 = [470, 480]
 
-            # print height, width, and frame ID of the acquisition image
-            print("Frame ID: %d   Height: %d   Width: %d"
-                  % (raw_image.get_frame_id(), raw_image.get_height(), raw_image.get_width()))
+
+            #trying spatial phase extraction
+            im_ = numpy_image[int(ypoints1[0]):int(ypoints1[1]),int(xpoints1[0]):int(xpoints1[1])]
+            self.im_sum = np.sum(im_, axis=0)
+
+            im_fft = np.fft.fft(self.im_sum)
+            self.abs_im_fft = np.abs(im_fft)
+            ind = round(float(self.ent_indexfft.get()))
+            try:
+                self.im_angl = np.angle(im_fft[ind])
+            except:
+                self.im_angl = 0
+            self.lbl_angle.config(text=self.im_angl)
+
+            # Show images
+            picture = Image.fromarray(numpy_image)
+            picture = picture.resize((500, 350), resample=0)
+            CaptureFrame = picture.copy()
+            picture = ImageTk.PhotoImage(picture)
+            self.ImageLabel.configure(image = picture)
+            self.ImageLabel.photo = picture
+
+            # creating the phase vector
+            self.im_phase[:-1] = self.im_phase[1:]
+            self.im_phase[-1] = self.im_angl
+            self.im_phase = np.unwrap(self.im_phase)
+
+            global stop_cam
+            if stop_cam ==1:
+                stop_cam = 0
+                break
 
 
     def cam_on_close(self, device):
@@ -199,28 +318,64 @@ class feedbacker(object):
         device.close_device()
 
     def cam_img(self):
-        self.init_cam(True)
-        # fft_array = np.fft.fft(numpy_array[750][1015:1075])
-        # fft_array = fft_array[5:-5]
-        # max_index = np.where(np.max(fft_array) == fft_array)[0][0]
-        # print(np.angle(fft_array[max_index]))
-        # print(numpy_array[750][1015:1075])
-        #
+        self.render_thread = threading.Thread(target=self.init_cam)
+        self.render_thread.daemon = True
+        self.render_thread.start()
+        self.plot_phase()
 
-    def cam_cont_img(self):
-        self.init_cam(False)
 
-    def cam_phi(self):
-        pass
+    def plot_fft(self):
+        self.ax1r.clear()
+        self.ax1r.plot(self.im_sum)
+        self.ax2r.clear()
+        self.ax2r.plot(self.abs_im_fft)
+        self.img1r.draw()
+
+    def plot_phase(self):
+        self.ax1p.clear()
+        self.ax1p.plot(self.im_phase)
+        self.img1p.draw()
+        self.win.after(500,self.plot_phase)
+
+    def fast_scan(self):
+        phis = np.linspace(0,2,60)
+        for phi in phis:
+            self.strvar_flat.set(phi)
+            self.feedback()
+            time.sleep(0.1)
 
     def set_area1(self):
         poly_1 = draw_polygon.draw_polygon(self.ax1, self.fig)
         print(poly_1)
 
-    def set_area2(self):
-        poly_2 = draw_polygon.draw_polygon(self.ax1, self.fig)
-        print(poly_2)
+    def set_setpoint(self):
+        self.pid.setpoint = self.ent_pidp.get()
+
+    def set_pid_val(self):
+        self.pid.Ki = self.ent_pidi.get()
+
+    def pid_strt(self):
+        while True:
+            correction = self.pid(self.im_angl)
+            self.strvar_flat.set(correction)
+            self.feedback()
+            global stop_pid
+            if stop_pid:
+                break
+
+    def enbl_pid(self):
+        #setting up a listener for new im_phase
+        global stop_pid
+        stop_pid = False
+        self.pid_thread = threading.Thread(target=self.pid_strt)
+        self.pid_thread.daemon = True
+        self.pid_thread.start()
+
+    def pid_stop(self):
+        global stop_pid
+        stop_pid = True
 
     def on_close(self):
-        plt.close(self.fig)
+        plt.close(self.figr)
+        plt.close(self.figp)
         self.win.destroy()
